@@ -4,7 +4,9 @@
 
 //PERGUNTAS:
 //1) Descobrir com o professor como rodar aplicação no CORE-Emulator
+// R: O terminal já tem acesso ao computador do usuário. Basta copiar o programa (cp)
 //2) É possível assumir que a rede é conhecida? (IP e MAC de todos os PCs hardcoded) Ou deve-se descobrir em runtime?
+// R: Não. Os IPs das máquinas devem ser passadas como parâmetro e o programa deve descobrir o MAC Address através de uma mensagem ARP Request
 //3) Como fazer com que o computador que está rodando o CORE-Emulator se comunique com as máquinas do Emulador (enviar ping, arp, etc...)?
 
 //IMPLEMENTAR:
@@ -13,6 +15,7 @@
 //3)API para receber pacotes ARP
 //4)O programa deve enviar uma mensagem ARP a cada segundo para manter a tabela ARP das vítimas atualizadas. Dica: usar função clock() da lib <time.h>. Exemplo em https://stackoverflow.com/questions/17167949/how-to-use-timer-in-c
 //5)man-in-the-middle: Habilitar IP Forwarding na máquina atacante. Executar o comando no Linux: $ echo 1 > /proc/sys/net/ipv4/ip_forward
+//6)Realizar o parsing dos argumentos da função main. Deve receber por argumentos a interface a ser utilizada. Exemplo: <nome interface> <ip gateway> <ip vitima>
 
 
 int main(int argc, char *argv[])
