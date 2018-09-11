@@ -29,9 +29,10 @@ void printARPPacket(union eth_buffer *arpPacket)
                                        arpPacket->cooked_data.payload.arp.tgt_paddr[3]);
 }
 
-int sendARPPacket(union eth_buffer *arpPacket)
+int sendARPPacket(union eth_buffer *arpPacket, socket_aux *srcSocketInfo, socket_aux *dstSocketInfo)
 {
-
+    //TODO: continuar
+    //sendto(srcSocketInfo->sockfd, arpPacket, strlen(arpPacket), 0, dstSocketInfo->sockfd, );
 }
 
 int rcvARPPacket(union eth_buffer *arpPacket)
