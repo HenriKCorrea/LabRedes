@@ -4,6 +4,8 @@
 
 #include <unistd.h>
 #include <signal.h>
+#include <stdio.h>
+#include <string.h>
 
 //PERGUNTAS:
 //1) Descobrir com o professor como rodar aplicação no CORE-Emulator
@@ -23,10 +25,10 @@
 //Struct holding all required information to run ARP spoofing application
 typedef struct {
 	socket_aux socketInfo;
-	uint8_t src_hwaddr[6];
-	uint8_t src_paddr[4];
-	uint8_t tgt_hwaddr[6];
-	uint8_t tgt_paddr[4];
+	uint8_t gatewayMAC[6];
+	uint8_t gatewayIP[4];
+	uint8_t victimMAC[6];
+	uint8_t victimIP[4];
 } arpPoisonData_t;
 
 
@@ -109,15 +111,35 @@ void arpPoisonProcess(arpPoisonData_t* arpData)
 	}	
 }
 
+void printHelp()
+{
+	printf("Usage: ./arpspoofing.out <interface name> <gateway IP> <victim IP>\n");
+	printf("E.G.: ./arpspoofing.out enp2s0 192.168.0.1 192.168.0.2\n");
+}
+
 int main(int argc, char *argv[])
 {
-	int result = 0;	//Operation result
+	int result = 1;	//Operation result
 	arpPoisonData_t arpData; //Struct holding all required information to run ARP spoofing application
 
-	//TODO: parse input arguments: <interface name> <gateway IP> <victim IP>
+	if (argc != 4) 
+	{
+		printHelp();
+		result = -1;
+	}
+	else
+	{	
+		//Scan Gateway IP
+		sscanf(argv[2], "%d.%d.%d.%d", &arpData.gatewayIP[0], &arpData.gatewayIP[1], &arpData.gatewayIP[2], &arpData.gatewayIP[3]);
+		//Scan Victim IP
+		sscanf(argv[3], "%d.%d.%d.%d", &arpData.victimIP[0], &arpData.victimIP[1], &arpData.victimIP[2], &arpData.victimIP[3]);
+	}
 	
 	//Create socket and set up interface to promiscouos mode
-	result = socketSetup(argc, argv, &arpData.socketInfo);
+	if(result == 1)
+	{
+		result = socketSetup(argc, argv, &arpData.socketInfo);
+	}
 
 	//TODO: Send ARP Request message to get the gateway MAC and victim MAC
 
