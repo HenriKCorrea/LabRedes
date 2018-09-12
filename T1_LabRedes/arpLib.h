@@ -2,6 +2,7 @@
 #define ARPLIB_HH
 
 #include "arp.h"
+#include "socketSetup.h"
 
 // TODO: colocar estaticamente endereços MAC e IP
 // da máquina vitima e do roteador
@@ -16,7 +17,7 @@ uint8_t tgt_paddr[4];
 void printARPPacket(union eth_buffer *arpPacket);
 
 // Send ARP packet
-int sendARPPacket(union eth_buffer *arpPacket);
+int sendARPPacket(union eth_buffer *arpPacket, socket_aux *srcSocketInfo, socket_aux *dstSocketInfo);
 
 // Receive ARP packet
 int rcvARPPacket(union eth_buffer *arpPacket);
