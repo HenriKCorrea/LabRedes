@@ -65,7 +65,7 @@ void printARPPacket(union eth_buffer *arpPacket)
 int sendARPRequestPacket(socket_aux *socketInfo, uint8_t *targetIP)
 {
     memcpy(arpReqPacket.cooked_data.payload.arp.tgt_paddr, targetIP, 4);
-    printARPPacket(arpReqPacket); // debug
+    printARPPacket(&arpReqPacket); // debug
     //sendto
 }
 
@@ -74,7 +74,7 @@ int sendARPReplyPacket(socket_aux *socketInfo, uint8_t *targetIP, uint8_t *targe
     memcpy(arpReqPacket.cooked_data.payload.arp.src_paddr, poisonIP, 4);
     memcpy(arpReqPacket.cooked_data.payload.arp.tgt_hwaddr, targetMAC, 6);
     memcpy(arpReqPacket.cooked_data.payload.arp.tgt_paddr, targetIP, 4);
-    printARPPacket(arpReqPacket); // debug
+    printARPPacket(&arpReqPacket); // debug
     //sendto
 }
 
