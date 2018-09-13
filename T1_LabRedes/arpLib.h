@@ -4,21 +4,27 @@
 #include "arp.h"
 #include "socketSetup.h"
 
-// for prior test
-uint8_t victim_mac[6]   = {0x00, 0x00, 0x00, 0xaa, 0x00, 0x00};
-uint8_t victim_ip[4]    = {0x10, 0x00, 0x00, 0x20};
+enum arpPkt
+{
+    REQUEST,
+    REPLY,
+    RECEIVED
+};
 
 static union eth_buffer arpReqPacket;
 static union eth_buffer arpRepPacket;
+static union eth_buffer arpRcvPacket;
 
 // Function to fill ARP packets headers
-int initPackets(socket_aux *socketInfo);
+void initPackets(socket_aux *socketInfo);
 
 //TODO: create function to get my own IP
 
-// Function that prints in the console the header fields
-// related to ARP procotol
+// Print ARP packet fields
 void printARPPacket(union eth_buffer *arpPacket);
+
+// Calls printARPPacket according to pkt
+int printPacket(enum arpPkt pkt);
 
 // Send ARP Request Packet
 int sendARPRequestPacket(socket_aux *socketInfo, uint8_t *targetIP);

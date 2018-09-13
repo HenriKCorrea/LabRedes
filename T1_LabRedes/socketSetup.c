@@ -94,7 +94,7 @@ int socketSetup(int argc, char* argv[], socket_aux* socket_data)
 		}
 		//Copy the IP address to the sockaddr member
 		struct sockaddr_in* ipaddr = (struct sockaddr_in*)&if_ip.ifr_addr;
-		memcpy(socket_data->this_ip, (uint8_t*)&ipaddr->sin_addr, 4);
+		memcpy(socket_data->this_ip, (uint8_t*)&ipaddr->sin_addr, IPV4_LEN);
 	}
 
 	return result;

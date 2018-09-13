@@ -14,6 +14,7 @@
 #include <netinet/ether.h>
 
 #define DEFAULT_IF	"eth0"
+#define IPV4_LEN	4
 
 //Auxiliary struct that holds essential information to send / receive data using sockets
 typedef struct  {
