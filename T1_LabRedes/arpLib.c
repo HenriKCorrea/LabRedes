@@ -11,7 +11,7 @@ int initPackets(socket_aux *socketInfo)
     arpReqPacket.cooked_data.payload.arp.operation  = htons(1);	        //Operation: 1 for Request; 2 for reply
     memcpy(arpReqPacket.cooked_data.payload.arp.src_hwaddr, socketInfo->this_mac, ETH_ALEN);
     //TODO: fill arp.src_paddr
-    arpReqPacket.cooked_data.payload.arp.tgt_hwaddr = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+    memset(arpReqPacket.cooked_data.payload.arp.tgt_hwaddr, 0xff, 6);
 
     // Ethernet Header (victim MAC will be filled in sendARPReplyPacket function)
     arpReqPacket.cooked_data.ethernet.eth_type = htons(ETH_P_ARP);
