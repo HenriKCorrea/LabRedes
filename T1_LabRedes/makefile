@@ -43,6 +43,8 @@ debug: prep_dbg
 	$(CC) -o $(DBGTARGET) $(SRC) $(IDIR) $(DBGCFLAGS)
 	@#Add the capability of the application use raw sockets without root privileges
 	sudo setcap cap_net_raw,cap_net_admin+ep $(DBGTARGET) 
+	@#Enable IP Forward
+	sudo sysctl -w net.ipv4.ip_forward=1
 
 #
 # Release rules
@@ -51,6 +53,8 @@ release: prep_rel
 	$(CC) -o $(RELTARGET) $(SRC) $(IDIR) $(RELCFLAGS)
 	@#Add the capability of the application use raw sockets without root privileges
 	sudo setcap cap_net_raw,cap_net_admin+ep $(RELTARGET) 
+	@#Enable IP Forward
+	sudo sysctl -w net.ipv4.ip_forward=1	
 
 #
 # Other rules

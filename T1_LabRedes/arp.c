@@ -18,9 +18,6 @@
 //1)API que imprime no console os campos de um pacote ARP (hw_type, prot_type, etc...)
 //2)API para enviar pacotes ARP
 //3)API para receber pacotes ARP
-//4)O programa deve enviar uma mensagem ARP a cada segundo para manter a tabela ARP das vítimas atualizadas. Dica: usar função clock() da lib <time.h>. Exemplo em https://stackoverflow.com/questions/17167949/how-to-use-timer-in-c
-//5)man-in-the-middle: Habilitar IP Forwarding na máquina atacante. Executar o comando no Linux: $ echo 1 > /proc/sys/net/ipv4/ip_forward
-//6)Realizar o parsing dos argumentos da função main. Deve receber por argumentos a interface a ser utilizada. Exemplo: <nome interface> <ip gateway> <ip vitima>
 
 //Struct holding all required information to run ARP spoofing application
 typedef struct {
@@ -117,6 +114,39 @@ void printHelp()
 	printf("E.G.: ./arpspoofing.out enp2s0 192.168.0.1 192.168.0.2\n");
 }
 
+int isIPForwardEnabled()
+{
+	int result = 1;	//Operation result
+	FILE *fp;		//Pipe output
+
+	//Create pipe to get 'cat' program response
+	fp = popen("cat /proc/sys/net/ipv4/ip_forward", "r");	
+	
+	if (fp == NULL) 
+	{
+		//Fail to execute command
+		printf("Fail to verify if IP forward is enabled (/proc/sys/net/ipv4/ip_forward)\n");
+		result = -2;
+	}
+	else
+	{
+		//Extract IP forward config value
+		int isIPFwdEnabled;
+		fscanf(fp, "%d", &isIPFwdEnabled);
+		pclose(fp);
+		
+		//Terminate application if IP forward is not enabled
+		if (isIPFwdEnabled != 1) 
+		{
+			result = -3;
+			printf("Fail to run application. IP Forward is not enabled in this host\n");
+			printf("Please execute: sudo sysctl -w net.ipv4.ip_forward=1\n");
+		}
+	}
+
+	return result;
+}
+
 int main(int argc, char *argv[])
 {
 	int result = 1;	//Operation result
@@ -134,6 +164,11 @@ int main(int argc, char *argv[])
 		//Scan Victim IP
 		sscanf(argv[3], "%d.%d.%d.%d", &arpData.victimIP[0], &arpData.victimIP[1], &arpData.victimIP[2], &arpData.victimIP[3]);
 	}
+
+	//Check if port forward is enabled
+	if (result == 1) {
+		result = isIPForwardEnabled();
+	}
 	
 	//Create socket and set up interface to promiscouos mode
 	if(result == 1)
@@ -145,7 +180,6 @@ int main(int argc, char *argv[])
 
 	//TODO: Send echo to enable port forwarding
 
-	
 	/* End of configuration. Now we can send and receive data using raw sockets. */
 	if(result == 1)
 	{		
