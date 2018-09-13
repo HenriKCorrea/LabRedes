@@ -24,7 +24,7 @@ void printARPPacket(union eth_buffer *arpPacket);
 int sendARPRequestPacket(socket_aux *socketInfo, uint8_t *targetIP);
 
 // Send ARP Reply Packet
-int sendARPReplyPacket(socket_aux *socketInfo, uint8_t *targetIP, uint8_t *targetMAC);
+int sendARPReplyPacket(socket_aux *socketInfo, uint8_t *targetIP, uint8_t *targetMAC, uint8_t *poisonIP);
 
 // Receive ARP packet
 int rcvARPPacket(union eth_buffer *arpPacket);
