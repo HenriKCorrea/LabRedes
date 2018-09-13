@@ -7,6 +7,9 @@
 #include <stdio.h>
 #include <string.h>
 
+//Ignore unused return values
+#pragma GCC diagnostic ignored "-Wunused-result"
+
 //PERGUNTAS:
 //1) Descobrir com o professor como rodar aplicação no CORE-Emulator
 // R: O terminal já tem acesso ao computador do usuário. Basta copiar o programa (cp)
@@ -160,9 +163,9 @@ int main(int argc, char *argv[])
 	else
 	{	
 		//Scan Gateway IP
-		sscanf(argv[2], "%d.%d.%d.%d", &arpData.gatewayIP[0], &arpData.gatewayIP[1], &arpData.gatewayIP[2], &arpData.gatewayIP[3]);
+		sscanf(argv[2], "%c.%c.%c.%c", &arpData.gatewayIP[0], &arpData.gatewayIP[1], &arpData.gatewayIP[2], &arpData.gatewayIP[3]);
 		//Scan Victim IP
-		sscanf(argv[3], "%d.%d.%d.%d", &arpData.victimIP[0], &arpData.victimIP[1], &arpData.victimIP[2], &arpData.victimIP[3]);
+		sscanf(argv[3], "%c.%c.%c.%c", &arpData.victimIP[0], &arpData.victimIP[1], &arpData.victimIP[2], &arpData.victimIP[3]);
 	}
 
 	//Check if port forward is enabled
@@ -177,8 +180,6 @@ int main(int argc, char *argv[])
 	}
 
 	//TODO: Send ARP Request message to get the gateway MAC and victim MAC
-
-	//TODO: Send echo to enable port forwarding
 
 	/* End of configuration. Now we can send and receive data using raw sockets. */
 	if(result == 1)

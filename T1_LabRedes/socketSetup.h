@@ -19,7 +19,8 @@
 typedef struct  {
 	int sockfd;                         //Holds the file descritor of the created socket
 	struct sockaddr_ll socket_address;  
-	char this_mac[6];                   //Current PC MAC Address
+	uint8_t this_mac[6];                   //Current PC MAC Address
+	uint8_t this_ip[4];					//Current PC IP Address
 }socket_aux;
 
 //Create a RAW socket, set interface to promiscuous mode and get the interface MAC Address
