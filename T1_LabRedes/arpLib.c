@@ -133,7 +133,7 @@ ssize_t sendSocket(socket_aux *socketInfo)
 ssize_t rcvARPPacket(socket_aux *socketInfo, union eth_buffer *arpRcvPacket)
 {
     ssize_t result;
-    recvfrom(socketInfo->sockfd, arpRcvPacket, ETH_LEN, 0, (struct sockaddr*)&socketInfo->socket_address, sizeof(socketInfo->socket_address));
+    result = recvfrom(socketInfo->sockfd, arpRcvPacket, ETH_LEN, 0, (struct sockaddr*)&socketInfo->socket_address, sizeof(socketInfo->socket_address));
 
     return result;
 }
