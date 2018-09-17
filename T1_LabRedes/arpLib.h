@@ -32,6 +32,9 @@ int sendARPRequestPacket(socket_aux *socketInfo, uint8_t *targetIP);
 // Send ARP Reply Packet
 int sendARPReplyPacket(socket_aux *socketInfo, uint8_t *targetIP, uint8_t *targetMAC, uint8_t *poisonIP);
 
+// Send socket to *socketInfo
+int sendSocket(socket_aux *socketInfo)
+
 // Receive ARP packet
 int rcvARPPacket(union eth_buffer *arpPacket);
 

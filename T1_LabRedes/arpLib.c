@@ -1,5 +1,11 @@
 #include "arpLib.h"
 
+// Print ARP packet fields
+void printARPPacket(union eth_buffer *arpPacket);
+
+// Send socket to *socketInfo
+ssize_t sendSocket(socket_aux *socketInfo)
+
 void initPackets(socket_aux *socketInfo)
 {
     // ARP Request Packet
@@ -41,25 +47,25 @@ void printARPPacket(union eth_buffer *arpPacket)
     printf("Data Lenght:    %d\n",                arpPacket->cooked_data.payload.arp.plen);
     printf("Operation:      %d\n",                arpPacket->cooked_data.payload.arp.operation);
     printf("Sender HA:      %d.%d.%d.%d.%d.%d\n", arpPacket->cooked_data.payload.arp.src_hwaddr[0],
-                                                     arpPacket->cooked_data.payload.arp.src_hwaddr[1],
-                                                     arpPacket->cooked_data.payload.arp.src_hwaddr[2],
-                                                     arpPacket->cooked_data.payload.arp.src_hwaddr[3],
-                                                     arpPacket->cooked_data.payload.arp.src_hwaddr[4],
-                                                     arpPacket->cooked_data.payload.arp.src_hwaddr[5]);
+                                                  arpPacket->cooked_data.payload.arp.src_hwaddr[1],
+                                                  arpPacket->cooked_data.payload.arp.src_hwaddr[2],
+                                                  arpPacket->cooked_data.payload.arp.src_hwaddr[3],
+                                                  arpPacket->cooked_data.payload.arp.src_hwaddr[4],
+                                                  arpPacket->cooked_data.payload.arp.src_hwaddr[5]);
     printf("Sender IP:      %d.%d.%d.%d\n",       arpPacket->cooked_data.payload.arp.src_paddr[0],
-                                                     arpPacket->cooked_data.payload.arp.src_paddr[1],
-                                                     arpPacket->cooked_data.payload.arp.src_paddr[2],
-                                                     arpPacket->cooked_data.payload.arp.src_paddr[3]);
+                                                  arpPacket->cooked_data.payload.arp.src_paddr[1],
+                                                  arpPacket->cooked_data.payload.arp.src_paddr[2],
+                                                  arpPacket->cooked_data.payload.arp.src_paddr[3]);
     printf("Target HA:      %d.%d.%d.%d.%d.%d\n", arpPacket->cooked_data.payload.arp.tgt_hwaddr[0],
-                                                     arpPacket->cooked_data.payload.arp.tgt_hwaddr[1],
-                                                     arpPacket->cooked_data.payload.arp.tgt_hwaddr[2],
-                                                     arpPacket->cooked_data.payload.arp.tgt_hwaddr[3],
-                                                     arpPacket->cooked_data.payload.arp.tgt_hwaddr[4],
-                                                     arpPacket->cooked_data.payload.arp.tgt_hwaddr[5]);
+                                                  arpPacket->cooked_data.payload.arp.tgt_hwaddr[1],
+                                                  arpPacket->cooked_data.payload.arp.tgt_hwaddr[2],
+                                                  arpPacket->cooked_data.payload.arp.tgt_hwaddr[3],
+                                                  arpPacket->cooked_data.payload.arp.tgt_hwaddr[4],
+                                                  arpPacket->cooked_data.payload.arp.tgt_hwaddr[5]);
     printf("Target IP:      %d.%d.%d.%d\n",       arpPacket->cooked_data.payload.arp.tgt_paddr[0],
-                                                     arpPacket->cooked_data.payload.arp.tgt_paddr[1],
-                                                     arpPacket->cooked_data.payload.arp.tgt_paddr[2],
-                                                     arpPacket->cooked_data.payload.arp.tgt_paddr[3]);
+                                                  arpPacket->cooked_data.payload.arp.tgt_paddr[1],
+                                                  arpPacket->cooked_data.payload.arp.tgt_paddr[2],
+                                                  arpPacket->cooked_data.payload.arp.tgt_paddr[3]);
 }
 
 int printPacket(enum arpPkt pkt)
@@ -90,23 +96,44 @@ int printPacket(enum arpPkt pkt)
     return 1;
 }
 
-int sendARPRequestPacket(socket_aux *socketInfo, uint8_t *targetIP)
+ssize_t sendARPRequestPacket(socket_aux *socketInfo, uint8_t *targetIP)
 {
+    ssize_t result;
+
     memcpy(arpReqPacket.cooked_data.payload.arp.tgt_paddr, targetIP, IPV4_LEN);
     printARPPacket(&arpReqPacket); // debug
     //sendto
+    result = sendSocket(socketInfo);
+
+    return result;
 }
 
-int sendARPReplyPacket(socket_aux *socketInfo, uint8_t *targetIP, uint8_t *targetMAC, uint8_t *poisonIP)
+ssize_t sendARPReplyPacket(socket_aux *socketInfo, uint8_t *targetIP, uint8_t *targetMAC, uint8_t *poisonIP)
 {
+    ssize_t result;
+
     memcpy(arpReqPacket.cooked_data.payload.arp.src_paddr, poisonIP, IPV4_LEN);
     memcpy(arpReqPacket.cooked_data.payload.arp.tgt_hwaddr, targetMAC, ETH_ALEN);
     memcpy(arpReqPacket.cooked_data.payload.arp.tgt_paddr, targetIP, IPV4_LEN);
-    printARPPacket(&arpReqPacket); // debug
-    //sendto
+    //printARPPacket(&arpReqPacket); // debug
+
+    result = sendSocket(socketInfo);
+
+    return result;
 }
 
-int rcvARPPacket(union eth_buffer *arpPacket)
+ssize_t sendSocket(socket_aux *socketInfo)
 {
+    ssize_t result;
+    result = sendto(socketInfo->sockfd, &arpRepPacket, ETH_LEN, 0, socketInfo->socket_address, sizeof(socketInfo->socket_address));
 
+    return result;
+}
+
+ssize_t rcvARPPacket(socket_aux *socketInfo)
+{
+    ssize_t result;
+    result = recvfrom(socketInfo->sockfd, &arpRcvPacket, ETH_LEN, 0, socketInfo->socket_address, sizeof(socketInfo->socket_address));
+
+    return result;
 }
