@@ -22,12 +22,12 @@ void initPackets(socket_aux *socketInfo);
 int printPacket(enum arpPkt pkt);
 
 // Send ARP Request Packet
-ssize_t sendARPRequestPacket(socket_aux *socketInfo, uint8_t *targetIP);
+ssize_t sendARPRequestPacket(socket_aux *socketInfo, uint8_t *targetIP, uint8_t *poisonIP);
 
 // Send ARP Reply Packet
 ssize_t sendARPReplyPacket(socket_aux *socketInfo, uint8_t *targetIP, uint8_t *targetMAC, uint8_t *poisonIP);
 
 // Receive ARP packet
-ssize_t rcvARPPacket(socket_aux *socketInfo, union eth_buffer *arpRcvPacket);
+ssize_t rcvARPPacket(socket_aux *socketInfo, union eth_buffer *arpRcvPacket, uint8_t *srcIP);
 
 #endif //ARP_LIB
