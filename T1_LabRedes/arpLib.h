@@ -18,24 +18,16 @@ static union eth_buffer arpRcvPacket;
 // Function to fill ARP packets headers
 void initPackets(socket_aux *socketInfo);
 
-//TODO: create function to get my own IP
-
-// Print ARP packet fields
-void printARPPacket(union eth_buffer *arpPacket);
-
 // Calls printARPPacket according to pkt
 int printPacket(enum arpPkt pkt);
 
 // Send ARP Request Packet
-int sendARPRequestPacket(socket_aux *socketInfo, uint8_t *targetIP);
+ssize_t sendARPRequestPacket(socket_aux *socketInfo, uint8_t *targetIP);
 
 // Send ARP Reply Packet
-int sendARPReplyPacket(socket_aux *socketInfo, uint8_t *targetIP, uint8_t *targetMAC, uint8_t *poisonIP);
-
-// Send socket to *socketInfo
-int sendSocket(socket_aux *socketInfo)
+ssize_t sendARPReplyPacket(socket_aux *socketInfo, uint8_t *targetIP, uint8_t *targetMAC, uint8_t *poisonIP);
 
 // Receive ARP packet
-int rcvARPPacket(union eth_buffer *arpPacket);
+ssize_t rcvARPPacket(socket_aux *socketInfo, union eth_buffer *arpRcvPacket);
 
 #endif //ARP_LIB
