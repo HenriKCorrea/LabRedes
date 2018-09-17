@@ -100,8 +100,7 @@ ssize_t sendARPRequestPacket(socket_aux *socketInfo, uint8_t *targetIP, uint8_t 
 
     memcpy(arpReqPacket.cooked_data.payload.arp.src_paddr, poisonIP, IPV4_LEN);
     memcpy(arpReqPacket.cooked_data.payload.arp.tgt_paddr, targetIP, IPV4_LEN);
-    printARPPacket(&arpReqPacket); // debug
-    //sendto
+    //printARPPacket(&arpReqPacket); // debug
     result = sendSocket(socketInfo);
 
     return result;
