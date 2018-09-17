@@ -125,7 +125,7 @@ ssize_t sendARPReplyPacket(socket_aux *socketInfo, uint8_t *targetIP, uint8_t *t
 ssize_t sendSocket(socket_aux *socketInfo)
 {
     ssize_t result;
-    result = sendto(socketInfo->sockfd, &arpRepPacket, ETH_LEN, 0, socketInfo->socket_address, sizeof(socketInfo->socket_address));
+    result = sendto(socketInfo->sockfd, &arpRepPacket, ETH_LEN, 0, (struct sockaddr*)&socketInfo->socket_address, sizeof(socketInfo->socket_address));
 
     return result;
 }
@@ -133,7 +133,7 @@ ssize_t sendSocket(socket_aux *socketInfo)
 ssize_t rcvARPPacket(socket_aux *socketInfo)
 {
     ssize_t result;
-    result = recvfrom(socketInfo->sockfd, &arpRcvPacket, ETH_LEN, 0, socketInfo->socket_address, sizeof(socketInfo->socket_address));
+    result = recvfrom(socketInfo->sockfd, &arpRcvPacket, ETH_LEN, 0, (struct sockaddr*)&socketInfo->socket_address, sizeof(socketInfo->socket_address));
 
     return result;
 }
