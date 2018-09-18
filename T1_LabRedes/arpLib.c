@@ -66,7 +66,7 @@ void printARPPacket(union eth_buffer *arpPacket)
                                                   arpPacket->cooked_data.payload.arp.tgt_paddr[3]);
 }
 
-int printPacket(enum arpPkt pkt)
+int printPacket(enum arpPkt pkt, union eth_buffer *arpRcvPacket)
 {
     switch(pkt)
     {
@@ -84,7 +84,7 @@ int printPacket(enum arpPkt pkt)
 
         case RECEIVED:
             printf("\n============== RECEIVED ARP PACKET ==============\n");
-            printARPPacket(&arpRcvPacket);
+            printARPPacket(arpRcvPacket);
             printf("\n=================================================\n");
             break;
 
@@ -102,7 +102,7 @@ ssize_t sendARPRequestPacket(socket_aux *socketInfo, uint8_t *targetIP, uint8_t 
     memcpy(arpReqPacket.cooked_data.payload.arp.tgt_paddr, targetIP, IPV4_LEN);
     memset(arpReqPacket.cooked_data.ethernet.dst_addr, 0xff, ETH_ALEN);     //Send ARP packet to broadcast
     
-    printARPPacket(&arpReqPacket); // debug
+    //printARPPacket(&arpReqPacket); // debug
     result = sendSocket(socketInfo, &arpReqPacket);
 
     return result;
@@ -136,6 +136,7 @@ ssize_t rcvARPPacket(socket_aux *socketInfo, union eth_buffer *arpRcvPacket, uin
     ssize_t result;
     uint8_t isNotARP = 1;
     
+    printf("rcv!!\n");
     while(isNotARP)
     {
         result = recvfrom(socketInfo->sockfd, arpRcvPacket->raw_data, ETH_LEN, 0, NULL, NULL);
@@ -148,6 +149,7 @@ ssize_t rcvARPPacket(socket_aux *socketInfo, union eth_buffer *arpRcvPacket, uin
             }
         }
     }
+    printf("out rcv\n");
 
     return result;
 }

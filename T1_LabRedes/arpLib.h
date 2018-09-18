@@ -13,13 +13,12 @@ enum arpPkt
 
 static union eth_buffer arpReqPacket;
 static union eth_buffer arpRepPacket;
-static union eth_buffer arpRcvPacket;
 
 // Function to fill ARP packets headers
 void initPackets(socket_aux *socketInfo);
 
 // Calls printARPPacket according to pkt
-int printPacket(enum arpPkt pkt);
+int printPacket(enum arpPkt pkt, union eth_buffer *arpRcvPacket);
 
 // Send ARP Request Packet
 ssize_t sendARPRequestPacket(socket_aux *socketInfo, uint8_t *targetIP, uint8_t *poisonIP);
