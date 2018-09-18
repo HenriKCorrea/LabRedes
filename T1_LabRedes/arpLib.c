@@ -4,7 +4,7 @@
 void printARPPacket(union eth_buffer *arpPacket);
 
 // Send socket to *socketInfo
-ssize_t sendSocket(socket_aux *socketInfo);
+ssize_t sendSocket(socket_aux *socketInfo, union eth_buffer* packet);
 
 void initPackets(socket_aux *socketInfo)
 {
@@ -100,8 +100,10 @@ ssize_t sendARPRequestPacket(socket_aux *socketInfo, uint8_t *targetIP, uint8_t 
 
     memcpy(arpReqPacket.cooked_data.payload.arp.src_paddr, poisonIP, IPV4_LEN);
     memcpy(arpReqPacket.cooked_data.payload.arp.tgt_paddr, targetIP, IPV4_LEN);
-    //printARPPacket(&arpReqPacket); // debug
-    result = sendSocket(socketInfo);
+    memset(arpReqPacket.cooked_data.ethernet.dst_addr, 0xff, ETH_ALEN);     //Send ARP packet to broadcast
+    
+    printARPPacket(&arpReqPacket); // debug
+    result = sendSocket(socketInfo, &arpReqPacket);
 
     return result;
 }
@@ -110,20 +112,21 @@ ssize_t sendARPReplyPacket(socket_aux *socketInfo, uint8_t *targetIP, uint8_t *t
 {
     ssize_t result;
 
-    memcpy(arpReqPacket.cooked_data.payload.arp.src_paddr, poisonIP, IPV4_LEN);
-    memcpy(arpReqPacket.cooked_data.payload.arp.tgt_hwaddr, targetMAC, ETH_ALEN);
-    memcpy(arpReqPacket.cooked_data.payload.arp.tgt_paddr, targetIP, IPV4_LEN);
+    memcpy(arpRepPacket.cooked_data.payload.arp.src_paddr, poisonIP, IPV4_LEN);
+    memcpy(arpRepPacket.cooked_data.payload.arp.tgt_hwaddr, targetMAC, ETH_ALEN);
+    memcpy(arpRepPacket.cooked_data.payload.arp.tgt_paddr, targetIP, IPV4_LEN);
     //printARPPacket(&arpReqPacket); // debug
 
-    result = sendSocket(socketInfo);
+    result = sendSocket(socketInfo, &arpRepPacket);
 
     return result;
 }
 
-ssize_t sendSocket(socket_aux *socketInfo)
+ssize_t sendSocket(socket_aux *socketInfo, union eth_buffer* packet)
 {
     ssize_t result;
-    result = sendto(socketInfo->sockfd, &arpRepPacket, ETH_LEN, 0, (struct sockaddr*)&socketInfo->socket_address, sizeof(struct sockaddr_ll));
+    memcpy(socketInfo->socket_address.sll_addr, packet->cooked_data.ethernet.dst_addr, ETH_ALEN);
+    result = sendto(socketInfo->sockfd, packet->raw_data, sizeof(struct eth_hdr) + sizeof(struct arp_packet), 0, (struct sockaddr*)&socketInfo->socket_address, sizeof(struct sockaddr_ll));
 
     return result;
 }
@@ -135,14 +138,14 @@ ssize_t rcvARPPacket(socket_aux *socketInfo, union eth_buffer *arpRcvPacket, uin
     
     while(isNotARP)
     {
-        result = recvfrom(socketInfo->sockfd, arpRcvPacket, ETH_LEN, 0, NULL, NULL);
-        if(arpRcvPacket->cooked_data.ethernet.eth_type == 0x0806)
+        result = recvfrom(socketInfo->sockfd, arpRcvPacket->raw_data, ETH_LEN, 0, NULL, NULL);
+        if(ntohs(arpRcvPacket->cooked_data.ethernet.eth_type) == ETH_P_ARP)
         {
             if(memcmp(arpRcvPacket->cooked_data.payload.arp.src_paddr, srcIP, IPV4_LEN) == 0)
             {
                 isNotARP = 0;
+                printARPPacket(arpRcvPacket);
             }
-
         }
     }
 

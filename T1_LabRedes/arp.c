@@ -1,6 +1,7 @@
 #include "arp.h"
 
 #include "socketSetup.h"
+#include "arpLib.h"
 
 #include <unistd.h>
 #include <signal.h>
@@ -163,9 +164,9 @@ int main(int argc, char *argv[])
 	else
 	{	
 		//Scan Gateway IP
-		sscanf(argv[2], "%c.%c.%c.%c", &arpData.gatewayIP[0], &arpData.gatewayIP[1], &arpData.gatewayIP[2], &arpData.gatewayIP[3]);
+		sscanf(argv[2], "%hhu.%hhu.%hhu.%hhu", &arpData.gatewayIP[0], &arpData.gatewayIP[1], &arpData.gatewayIP[2], &arpData.gatewayIP[3]);
 		//Scan Victim IP
-		sscanf(argv[3], "%c.%c.%c.%c", &arpData.victimIP[0], &arpData.victimIP[1], &arpData.victimIP[2], &arpData.victimIP[3]);
+		sscanf(argv[3], "%hhu.%hhu.%hhu.%hhu", &arpData.victimIP[0], &arpData.victimIP[1], &arpData.victimIP[2], &arpData.victimIP[3]);
 	}
 
 	//Check if port forward is enabled
@@ -180,6 +181,43 @@ int main(int argc, char *argv[])
 	}
 
 	//TODO: Send ARP Request message to get the gateway MAC and victim MAC
+	if (result == 1) 
+	{
+		union eth_buffer receivedPacket;	//Temporary buffer to reveive ARP packages from victims
+		initPackets(&arpData.socketInfo);	//Initialize ARP library
+
+		if(sendARPRequestPacket(&arpData.socketInfo, arpData.gatewayIP, arpData.victimIP) <= 0)
+		{
+			printf("Fail to send ARP Request packet to Gateway\n");
+			result = -2;
+		}
+		if((result == 1) && (rcvARPPacket(&arpData.socketInfo, &receivedPacket, arpData.gatewayIP) <= 0))
+		{
+			printf("Fail to receive ARP Reply packet from Gateway\n");
+			result = -3;
+		}		
+		if (result == 1) 
+		{
+			memcpy(arpData.gatewayMAC, receivedPacket.cooked_data.ethernet.src_addr, ETH_ALEN);
+		}
+		
+
+		if((result == 1) && (sendARPRequestPacket(&arpData.socketInfo, arpData.victimIP, arpData.gatewayIP) <= 0))
+		{
+			printf("Fail to send ARP Request packet to Victim\n");
+			result = -4;
+		}
+		if((result == 1) && (rcvARPPacket(&arpData.socketInfo, &receivedPacket, arpData.victimIP) <= 0))
+		{
+			printf("Fail to receive ARP Reply packet from Victim\n");
+			result = -5;
+		}
+		if (result == 1) 
+		{
+			memcpy(arpData.victimMAC, receivedPacket.cooked_data.ethernet.src_addr, ETH_ALEN);
+		}		
+	}
+	
 
 	/* End of configuration. Now we can send and receive data using raw sockets. */
 	if(result == 1)
