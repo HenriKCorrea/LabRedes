@@ -45,6 +45,10 @@ debug: prep_dbg
 	sudo setcap cap_net_raw,cap_net_admin+ep $(DBGTARGET) 
 	@#Enable IP Forward
 	sudo sysctl -w net.ipv4.ip_forward=1
+	@#Optional: attempt to copy application to /tmp directory
+	cp $(DBGTARGET) /tmp || true	
+	@#Optional: attempt to copy startup script to /tmp directory
+	cp ./coreemulatorscript.sh /tmp || true		
 
 #
 # Release rules
@@ -54,7 +58,11 @@ release: prep_rel
 	@#Add the capability of the application use raw sockets without root privileges
 	sudo setcap cap_net_raw,cap_net_admin+ep $(RELTARGET) 
 	@#Enable IP Forward
-	sudo sysctl -w net.ipv4.ip_forward=1	
+	sudo sysctl -w net.ipv4.ip_forward=1
+	@#Optional: attempt to copy application to /tmp directory
+	cp $(RELTARGET) /tmp || true
+	@#Optional: attempt to copy startup script to /tmp directory
+	cp ./coreemulatorscript.sh /tmp || true	
 
 #
 # Other rules
