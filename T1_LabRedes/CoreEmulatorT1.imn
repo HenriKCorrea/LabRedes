@@ -67,18 +67,18 @@ node n5 {
 }
 
 node n1 {
-    type hub
+    type lanswitch
     network-config {
-	hostname hub
+	hostname switch
 	!
     }
     canvas c1
-    iconcoords {347.0 307.0}
-    labelcoords {347.0 331.0}
+    iconcoords {369.0 317.0}
+    labelcoords {369.0 341.0}
     interface-peer {e0 n3}
-    interface-peer {e1 n2}
-    interface-peer {e2 n4}
-    interface-peer {e3 n5}
+    interface-peer {e1 n4}
+    interface-peer {e2 n5}
+    interface-peer {e3 n2}
 }
 
 link l1 {
@@ -87,17 +87,17 @@ link l1 {
 }
 
 link l2 {
-    nodes {n2 n1}
+    nodes {n4 n1}
     bandwidth 0
 }
 
 link l3 {
-    nodes {n1 n4}
+    nodes {n5 n1}
     bandwidth 0
 }
 
 link l4 {
-    nodes {n1 n5}
+    nodes {n2 n1}
     bandwidth 0
 }
 
