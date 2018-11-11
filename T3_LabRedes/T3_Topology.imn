@@ -41,7 +41,7 @@ node n1 {
 	
 	}
     }
-    services {UserDefined SSH DefaultRoute}
+    services {DefaultRoute SSH UserDefined}
 }
 
 node n2 {
@@ -64,18 +64,18 @@ node n2 {
     labelcoords {285.0 358.0}
     interface-peer {eth0 n1}
     interface-peer {eth1 n3}
-    services {zebra OSPFv3 OSPFv2 UserDefined SSH}
+    services {zebra OSPFv2 OSPFv3 SSH UserDefined}
     custom-config {
 	custom-config-id service:UserDefined
 	custom-command UserDefined
 	config {
-	files=('iptables', )
-	cmdup=('sh iptables', )
+	files=('iptables.sh', )
+	cmdup=('route add default gw 10.0.2.1', 'sh iptables.sh', )
 	}
     }
     custom-config {
-	custom-config-id service:UserDefined:iptables
-	custom-command iptables
+	custom-config-id service:UserDefined:iptables.sh
+	custom-command iptables.sh
 	config {
 	#!/bin/sh
 	#Iptables configuração.
