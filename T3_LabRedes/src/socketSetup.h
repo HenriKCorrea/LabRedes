@@ -11,7 +11,6 @@
 #include <stdlib.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
-#include <net/if.h>
 #include <netinet/ether.h>
 
 #define DEFAULT_IF	"eth0"

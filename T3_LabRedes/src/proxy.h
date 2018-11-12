@@ -22,6 +22,8 @@ retStatus proxy_bindTunnel(); //OK
 
 void mountClientSendPacket();
 
+void proxy_sendRawPacket();
+
 void proxy_parseReceivedPacket();
 
 void proxy_startProxy();

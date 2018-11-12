@@ -6,7 +6,7 @@ socket_aux stIcmpSocket;
 union eth_buffer unionPacket2Send;
 union eth_buffer unionPacket2Recv;
 
-void proxy_createSocket()
+retStatus proxy_createSocket()
 {
     int result;
     
@@ -50,11 +50,19 @@ void mountClientSendPacket()
 
 void mountServerSendPacket()
 {
-    unionPacket2Send.cooked_data.payload.icmp.code = ICMP_ECHO_REQUEST_CODE;
-    unionPacket2Send.cooked_data.payload.icmp.type = ICMP_ECHO_REQUEST_TYPE;
+    unionPacket2Send.cooked_data.payload.icmp.code = ICMP_ECHO_REPLY_CODE;
+    unionPacket2Send.cooked_data.payload.icmp.type = ICMP_ECHO_REPLY_TYPE;
     unionPacket2Send.cooked_data.payload.icmp.checksum = ICMP_NO_CEHCKSUM;
 }
 
-void proxy_parseReceivedPacket();
+void proxy_sendRawPacket()
+{
+
+}
+
+void proxy_parseReceivedPacket()
+{
+
+}
 
 void proxy_startProxy();
