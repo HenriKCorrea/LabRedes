@@ -2,7 +2,6 @@
  *  tunnel.c
  */
 
-#include "icmp.h"
 #include "tunnel.h"
 
 #include <stdlib.h>

@@ -6,6 +6,5 @@
 
 int main()
 {
-    proxy_createICMPSocket();
     return 0;
 }

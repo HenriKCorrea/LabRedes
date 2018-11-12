@@ -1,21 +1,60 @@
-
-#include <stdio.h>
+#include "socketSetup.h"
+#include "raw.h"
 #include "proxy.h"
 
-void proxy_createICMPSocket()
-{
-    //int sock_fd, on = 1;
+socket_aux stIcmpSocket;
+union eth_buffer unionPacket2Send;
+union eth_buffer unionPacket2Recv;
 
-    //sock_fd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
+void proxy_createSocket()
+{
+    int result;
+    
+    result = socketSetup(PROXY_TUNNEL_NAME, &stIcmpSocket);
+    
+    if(result != PROXY_OP_OK)
+    {
+        return PROXY_OP_ERROR;
+    }
+    else
+    {
+        return PROXY_OP_OK;
+    }
 }
 
-void proxy_bindTunnel()
+retStatus proxy_bindTunnel()
 {
+    int result;
+    struct sockaddr_in serverAddr;
 
+
+    memset(&serverAddr, 0, sizeof(struct sockaddr_in));
+    serverAddr.sin_family = AF_INET;
+    serverAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+
+    result = bind(stIcmpSocket.sockfd, (struct sockaddr*)&serverAddr, sizeof(struct sockaddr_in));
+    if(result == -1)
+    {
+        return PROXY_OP_ERROR;
+    }
+
+    return PROXY_OP_OK;
 }
 
-void proxy_mountPacket();
+void mountClientSendPacket()
+{
+    unionPacket2Send.cooked_data.payload.icmp.code = ICMP_ECHO_REQUEST_CODE;
+    unionPacket2Send.cooked_data.payload.icmp.type = ICMP_ECHO_REQUEST_TYPE;
+    unionPacket2Send.cooked_data.payload.icmp.checksum = ICMP_NO_CEHCKSUM;
+}
 
-void proxy_unmountPacket();
+void mountServerSendPacket()
+{
+    unionPacket2Send.cooked_data.payload.icmp.code = ICMP_ECHO_REQUEST_CODE;
+    unionPacket2Send.cooked_data.payload.icmp.type = ICMP_ECHO_REQUEST_TYPE;
+    unionPacket2Send.cooked_data.payload.icmp.checksum = ICMP_NO_CEHCKSUM;
+}
+
+void proxy_parseReceivedPacket();
 
 void proxy_startProxy();
