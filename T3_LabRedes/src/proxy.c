@@ -1,58 +1,73 @@
-#include "socketSetup.h"
-#include "raw.h"
+#include <arpa/inet.h>
+#include <netinet/ether.h>
+#include <stdio.h>
+#include <string.h>
+
 #include "proxy.h"
 
-socket_aux stIcmpSocket;
-union eth_buffer unionPacket2Send;
-union eth_buffer unionPacket2Recv;
 
-retStatus proxy_createSocket()
+uint16_t icmpchecksum(uint16_t *buffer, uint32_t size) 
 {
-    int result;
-    
-    result = socketSetup(PROXY_TUNNEL_NAME, &stIcmpSocket);
-    
-    if(result != PROXY_OP_OK)
+    unsigned long cksum=0;
+    while(size >1) 
     {
-        return PROXY_OP_ERROR;
+        cksum+=*buffer++;
+        size -=sizeof(uint16_t);
     }
-    else
+    if(size ) 
     {
-        return PROXY_OP_OK;
+        cksum += *(uint8_t*)buffer;
     }
+    cksum = (cksum >> 16) + (cksum & 0xffff);
+    cksum += (cksum >>16);
+    return (uint16_t)(~cksum);
 }
 
-retStatus proxy_bindTunnel()
+void initPacket(union eth_buffer* packet, uint8_t* src_mac, uint8_t* dst_mac)
 {
-    int result;
-    struct sockaddr_in serverAddr;
+	/* Fill the Ethernet frame header */
+	memcpy(packet->cooked_data.ethernet.dst_addr, dst_mac, 6);
+	memcpy(packet->cooked_data.ethernet.src_addr, src_mac, 6);
+	packet->cooked_data.ethernet.eth_type = htons(ETH_P_IP);	//IPV4 packet
 
+	/* Fill IP header data. Fill all fields and a zeroed CRC field, then update the CRC! */
+	packet->cooked_data.payload.ip.ver = 0x45;
+	packet->cooked_data.payload.ip.tos = 0x00;
+	//packet->cooked_data.payload.ip.len = htons(sizeof(struct ip_hdr) + sizeof(struct icmp_hdr) + sizeof(packet_bytes));
+	packet->cooked_data.payload.ip.id = htons(0x00);
+	packet->cooked_data.payload.ip.off = htons(0x00);
+	packet->cooked_data.payload.ip.ttl = 50;
+	packet->cooked_data.payload.ip.proto = 1;			//ICMP (1)
+	packet->cooked_data.payload.ip.sum = htons(0x0000);
+	// packet->cooked_data.payload.ip.src[0] = 22;
+	// packet->cooked_data.payload.ip.src[1] = 0;
+	// packet->cooked_data.payload.ip.src[2] = 0;
+	// packet->cooked_data.payload.ip.src[3] = 22;
+	// packet->cooked_data.payload.ip.dst[0] = 33;
+	// packet->cooked_data.payload.ip.dst[1] = 0;
+	// packet->cooked_data.payload.ip.dst[2] = 0;
+	// packet->cooked_data.payload.ip.dst[3] = 33;
+	//packet->cooked_data.payload.ip.sum = htons((~ipchksum((uint8_t *)&packet->cooked_data.payload.ip) & 0xffff));     
 
-    memset(&serverAddr, 0, sizeof(struct sockaddr_in));
-    serverAddr.sin_family = AF_INET;
-    serverAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	//Fill ICMP header data.
+	//packet->cooked_data.payload.icmp.type = 8;	//(8) echo request
+	packet->cooked_data.payload.icmp.code = 0; //(0) echo request / reply
+	packet->cooked_data.payload.icmp.checksum = 0;
+	packet->cooked_data.payload.icmp.identifier = htons(0x17);	//set an random value per transmission (not by packet sent)
+	packet->cooked_data.payload.icmp.sequenceNumber = htons(0x01);	//Increment sequence for each echo request packet sent
 
-    result = bind(stIcmpSocket.sockfd, (struct sockaddr*)&serverAddr, sizeof(struct sockaddr_in));
-    if(result == -1)
-    {
-        return PROXY_OP_ERROR;
-    }
+	/* Fill ICMP payload */
+	//memcpy(packet->raw_data + sizeof(struct eth_hdr) + sizeof(struct ip_hdr) + sizeof(struct icmp_hdr), packet_bytes, sizeof(packet_bytes));
 
-    return PROXY_OP_OK;
-}
+	//Calculate ICMP checksum
+	//packet->cooked_data.payload.icmp.checksum = icmpchecksum((uint16_t *)&packet->cooked_data.payload.icmp, sizeof(struct icmp_hdr) + sizeof(packet_bytes));	    
 
-void mountClientSendPacket()
-{
-    unionPacket2Send.cooked_data.payload.icmp.code = ICMP_ECHO_REQUEST_CODE;
-    unionPacket2Send.cooked_data.payload.icmp.type = ICMP_ECHO_REQUEST_TYPE;
-    unionPacket2Send.cooked_data.payload.icmp.checksum = ICMP_NO_CEHCKSUM;
-}
+	/* Send it.. */
+	// memcpy(socket_address.sll_addr, dst_mac, 6);
+	// if (sendto(sockfd, packet->raw_data, sizeof(struct eth_hdr) + sizeof(struct ip_hdr) + sizeof(struct icmp_hdr) + sizeof(packet_bytes), 0, (struct sockaddr*)&socket_address, sizeof(struct sockaddr_ll)) < 0)
+	// 	printf("Send failed\n");
 
-void mountServerSendPacket()
-{
-    unionPacket2Send.cooked_data.payload.icmp.code = ICMP_ECHO_REPLY_CODE;
-    unionPacket2Send.cooked_data.payload.icmp.type = ICMP_ECHO_REPLY_TYPE;
-    unionPacket2Send.cooked_data.payload.icmp.checksum = ICMP_NO_CEHCKSUM;
+	// return 0;
 }
 
 void proxy_sendRawPacket()
@@ -60,9 +75,80 @@ void proxy_sendRawPacket()
 
 }
 
-void proxy_parseReceivedPacket()
+int getDefaultGateway(uint8_t* defaultGatewayMAC, char* destination)
 {
+	int result = 1;	//Operation result
+    char program[100] = {0};    //Instruction to be executed
+    char IPAddress[20] = {0};    //program output
+	FILE *fp;		//Pipe output
 
+    //get destination IP
+    sprintf(program, "route | grep %s | awk '{print $2}'", destination);
+
+	//Create pipe to get program response
+	fp = popen(destination, "r");	
+	
+	if (fp == NULL) 
+	{
+		//Fail to execute command
+		printf("Fail to execute command %s\n", program);
+		result = -1;
+	}
+	else
+	{
+		//Extract program returned IP address
+		fscanf(fp, "%s", IPAddress);
+		pclose(fp);
+
+		//Terminate application if IP is invalid
+		if ((strlen(IPAddress) < 7) || (strlen(IPAddress) > 15)) 
+		{
+			result = -1;
+			printf("Invalid output of command %s\n", program);
+            printf("Returned: %s\n", IPAddress);
+		}
+	}
+
+    
+    //Execute arping command only if previous command has been executed successfully
+    if (result == 1) 
+    {
+        //clear program buffer
+        memset(program, 0, 100);
+
+        //query default gateway MAC address
+        sprintf(program, "arping %s -f -w 1 |  egrep -o '\\[.*?\\]' | tr -d []", IPAddress);
+
+        //Create pipe to get program response
+        fp = popen(destination, "r");	
+        
+        if (fp == NULL) 
+        {
+            //Fail to execute command
+            printf("Fail to execute command %s\n", program);
+            result = -1;
+        }
+        else
+        {
+            //Extract program output
+            char MACAddress[20] = {0};    //program output
+            fscanf(fp, "%s", MACAddress);
+            pclose(fp);
+            
+            //Terminate application if output is invalid
+            if (strlen(MACAddress) != 17) 
+            {
+                result = -1;
+                printf("Invalid output of command %s\n", program);
+                printf("Returned: %s\n", MACAddress);
+            }
+            else
+            {
+                //Scan Gateway MAC
+		        sscanf(MACAddress, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx", &defaultGatewayMAC[0], &defaultGatewayMAC[1], &defaultGatewayMAC[2], &defaultGatewayMAC[3], &defaultGatewayMAC[4], &defaultGatewayMAC[5]);
+            }
+        }
+    }
+
+	return result;
 }
-
-void proxy_startProxy();

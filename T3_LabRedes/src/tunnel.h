@@ -5,6 +5,8 @@
 #ifndef tunnel_gaurd
 #define tunnel_gaurd
 
+#include <stdint.h>
+
 #define SERVER_SCRIPT "server.sh"
 #define CLIENT_SCRIPT "client.sh"
 
@@ -26,6 +28,6 @@ int tun_write(int tun_fd, char *buffer, int length);
 /**
  * Function to run the tunnel
  */
-void run_tunnel(char *dest, int server);
+void run_tunnel(uint8_t *dest, int isServer, int isClient);
 
 #endif

@@ -1,11 +1,12 @@
 #if !defined(RAW_HH)
 #define RAW_HH
 
+#include <stdint.h>
+#include <stddef.h>
+
 #define ETH_LEN	1518
 #define ETHER_TYPE	0x0800
 #define DEFAULT_IF	"eth0"
-
-#include <stdint.h>
 
 struct eth_hdr {
 	uint8_t dst_addr[6];
@@ -65,5 +66,11 @@ union eth_buffer {
 	struct eth_frame_s cooked_data;
 	uint8_t raw_data[ETH_LEN];
 };
+
+//The number of bytes used by all headers in the packet
+#define FRAME_HEADER_SIZE sizeof(struct eth_hdr) + sizeof(struct ip_hdr) + sizeof(struct icmp_hdr)
+
+//The available space to be used by the data buffer
+#define PACKET_DATA_BUFFER_SIZE ETH_LEN - FRAME_HEADER_SIZE
 
 #endif // RAW_HH
