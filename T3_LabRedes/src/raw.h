@@ -71,6 +71,6 @@ union eth_buffer {
 #define FRAME_HEADER_SIZE sizeof(struct eth_hdr) + sizeof(struct ip_hdr) + sizeof(struct icmp_hdr)
 
 //The available space to be used by the data buffer
-#define PACKET_DATA_BUFFER_SIZE ETH_LEN - FRAME_HEADER_SIZE
+#define PACKET_DATA_BUFFER_SIZE (ETH_LEN - (sizeof(struct eth_hdr) + sizeof(struct ip_hdr) + sizeof(struct icmp_hdr)))
 
 #endif // RAW_HH
