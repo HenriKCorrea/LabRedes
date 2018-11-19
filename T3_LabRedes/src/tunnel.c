@@ -259,7 +259,7 @@ void run_tunnel(uint8_t *dest, int isServer, int isClient)
 
       printf("[DEBUG] Preparing ICMP packet to be sent\n");
       // Preparing ICMP packet to be sent
-      memset(packet.raw_data, 0, ETH_LEN);     //Clean packet buffer
+      clean_data_buffer(&packet);     //Clean packet buffer
       printf("[DEBUG] Destination address: %s\n", dest);
 
 
@@ -273,10 +273,7 @@ void run_tunnel(uint8_t *dest, int isServer, int isClient)
       //   exit(EXIT_FAILURE);
       // }
       //strncpy(packet.src_addr, DEFAULT_ROUTE, strlen(DEFAULT_ROUTE) + 1);
-      packet.cooked_data.payload.ip.src[0] = socketInfo.this_ip[0];
-      packet.cooked_data.payload.ip.src[1] = socketInfo.this_ip[1];
-      packet.cooked_data.payload.ip.src[2] = socketInfo.this_ip[2];
-      packet.cooked_data.payload.ip.src[3] = socketInfo.this_ip[3];
+      setSrcIP(&packet, socketInfo.this_ip);
 
       /////////////////////////////////////////////////////////////////////////
       //TODO: Set the packet IP destination address the IP given by parameter
@@ -287,10 +284,7 @@ void run_tunnel(uint8_t *dest, int isServer, int isClient)
       //   exit(EXIT_FAILURE);
       // }
       // strncpy(packet.dest_addr, dest, strlen(dest) + 1);
-      packet.cooked_data.payload.ip.dst[0] = dest[0];
-      packet.cooked_data.payload.ip.dst[1] = dest[1];
-      packet.cooked_data.payload.ip.dst[2] = dest[2];
-      packet.cooked_data.payload.ip.dst[3] = dest[3];
+      setDstIP(&packet, dest);
 
       //HKC: Memory is already allocated in packet variable
       //packet.payload = calloc(MTU, sizeof(uint8_t));

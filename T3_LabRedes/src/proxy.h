@@ -37,4 +37,10 @@ void proxy_startProxy();
 
 uint16_t icmpchecksum(uint16_t *buffer, uint32_t size);
 
+void clean_data_buffer(union eth_buffer* packet);
+
+void setSrcIP(union eth_buffer* packet, uint8_t* ip);
+
+void setDstIP(union eth_buffer* packet, uint8_t* ip);
+
 #endif // PROXY_HH

@@ -160,3 +160,27 @@ int getDefaultGateway(uint8_t* defaultGatewayMAC, char* destination)
 
 	return result;
 }
+
+void clean_data_buffer(union eth_buffer* packet)
+{
+	int frame = FRAME_HEADER_SIZE;
+	int packet_size = PACKET_DATA_BUFFER_SIZE;
+
+	memset(packet->raw_data + FRAME_HEADER_SIZE, 0, PACKET_DATA_BUFFER_SIZE);
+}
+
+void setSrcIP(union eth_buffer* packet, uint8_t* ip)
+{
+	packet->cooked_data.payload.ip.src[0] = ip[0];
+	packet->cooked_data.payload.ip.src[1] = ip[1];
+	packet->cooked_data.payload.ip.src[2] = ip[2];
+	packet->cooked_data.payload.ip.src[3] = ip[3];	
+}
+
+void setDstIP(union eth_buffer* packet, uint8_t* ip)
+{
+	packet->cooked_data.payload.ip.dst[0] = ip[0];
+	packet->cooked_data.payload.ip.dst[1] = ip[1];
+	packet->cooked_data.payload.ip.dst[2] = ip[2];
+	packet->cooked_data.payload.ip.dst[3] = ip[3];	
+}
