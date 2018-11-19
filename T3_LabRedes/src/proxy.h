@@ -27,13 +27,15 @@ void proxy_createICMPSocket(); //OK
 
 retStatus proxy_bindTunnel(); //OK
 
-void initPacket(union eth_buffer* packet, uint8_t* src_mac, uint8_t* dst_mac, int whoAmI);
+void initPacket(union eth_buffer* packet, uint8_t* src_mac, uint8_t* dst_mac, int isClient, int isServer);
 
-void proxy_sendRawPacket();
+void proxy_sendRawPacket(int sock_fd, union eth_buffer *packet, int dataLength, socket_aux *socketInfo);
 
 void proxy_parseReceivedPacket();
 
 void proxy_startProxy();
+
+uint32_t ipchksum(uint8_t *packet);
 
 uint16_t icmpchecksum(uint16_t *buffer, uint32_t size);
 

@@ -214,15 +214,7 @@ void run_tunnel(uint8_t *dest, int isServer, int isClient)
   }
   
   //mount (init) packet
-  if(isServer == 1)
-  {
-    initPacket(&packet, socketInfo.this_mac, gateway_mac, 1); // (1) == CLIENT
-  }
-
-  if(isClient == 1)
-  {
-    initPacket(&packet, socketInfo.this_mac, gateway_mac, 2); // (2) == SERVER
-  }
+  initPacket(&packet, socketInfo.this_mac, gateway_mac, isClient, isServer);
   
   // HKC: Não é possível fazer bind quando uma interface é aberta em modo promiscuo.
   // if (server) {
@@ -283,7 +275,7 @@ void run_tunnel(uint8_t *dest, int isServer, int isClient)
       printf("[DEBUG] Sending ICMP packet with payload_size: %d\n", payload_size);
       // Sending ICMP packet
       //send_icmp_packet(sock_fd, &packet); /* CHANGE TO MY FUNCTION */
-      proxy_sendRawPacket(sock_fd, packet, FRAME_HEADER_SIZE + payload_size, &socketInfo);
+      proxy_sendRawPacket(sock_fd, &packet, FRAME_HEADER_SIZE + payload_size, &socketInfo);
 
       //HKC: Malloc is not used by raw packets
       //free(packet.payload);
@@ -295,7 +287,7 @@ void run_tunnel(uint8_t *dest, int isServer, int isClient)
       // Reading data from remote socket and sending to tun device
 
       // Getting ICMP packet
-      memset(packet.raw_data, 0, ETH_LEN);
+      clean_data_buffer(&packet);     //Clean packet buffer
       int payload_size = 0;
       //payload_size = receive_icmp_packet(sock_fd, &packet); /* CHANGE TO MY FUNCTION */
 

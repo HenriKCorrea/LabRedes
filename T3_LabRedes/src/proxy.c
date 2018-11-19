@@ -5,6 +5,17 @@
 
 #include "proxy.h"
 
+uint32_t ipchksum(uint8_t *packet)
+{
+	uint32_t sum=0;
+	uint16_t i;
+
+	for(i = 0; i < 20; i += 2)
+		sum += ((uint32_t)packet[i] << 8) | (uint32_t)packet[i + 1];
+	while (sum & 0xffff0000)
+		sum = (sum & 0xffff) + (sum >> 16);
+	return sum;
+}
 
 uint16_t icmpchecksum(uint16_t *buffer, uint32_t size) 
 {
@@ -23,7 +34,7 @@ uint16_t icmpchecksum(uint16_t *buffer, uint32_t size)
     return (uint16_t)(~cksum);
 }
 
-void initPacket(union eth_buffer* packet, uint8_t* src_mac, uint8_t* dst_mac, int whoAmI)
+void initPacket(union eth_buffer* packet, uint8_t* src_mac, uint8_t* dst_mac, int isClient, int isServer)
 {
 	/* Fill the Ethernet frame header */
 	memcpy(packet->cooked_data.ethernet.dst_addr, dst_mac, 6);
@@ -51,15 +62,23 @@ void initPacket(union eth_buffer* packet, uint8_t* src_mac, uint8_t* dst_mac, in
 	//packet->cooked_data.payload.ip.sum = htons((~ipchksum((uint8_t *)&packet->cooked_data.payload.ip) & 0xffff));     
 
 	//Fill ICMP header data.
-	if(whoAmI == 1)
-	{
-		packet->cooked_data.payload.icmp.code = ICMP_ECHO_REQUEST_TYPE; // 0x00 ECHO REQUEST
-	}
-	if(whoAmI == 2)
-	{
-		packet->cooked_data.payload.icmp.code = ICMP_ECHO_REPLY_TYPE; // 0x08 ECHO REPLY
-	}	
 
+	//Set type according to host
+	if(isClient == 1)
+	{
+		packet->cooked_data.payload.icmp.type = ICMP_ECHO_REQUEST_TYPE; // 0x08 ECHO REQUEST
+	}
+	else if(isServer == 1)
+	{
+		packet->cooked_data.payload.icmp.type = ICMP_ECHO_REPLY_TYPE; // 0x00 ECHO REPLY
+	}
+	else
+	{
+		packet->cooked_data.payload.icmp.type = 66; 	//Invalid type
+	}
+	
+
+	packet->cooked_data.payload.icmp.code = 0;	//Code: (0) echo request / reply
 	packet->cooked_data.payload.icmp.checksum = 0;
 	packet->cooked_data.payload.icmp.identifier = htons(0x17);	//set an random value per transmission (not by packet sent)
 	packet->cooked_data.payload.icmp.sequenceNumber = htons(0x01);	//Increment sequence for each echo request packet sent
@@ -78,9 +97,21 @@ void initPacket(union eth_buffer* packet, uint8_t* src_mac, uint8_t* dst_mac, in
 	// return 0;
 }
 
-void proxy_sendRawPacket(int sock_fd, union eth_buffer *packet, int lenght, socket_aux *socketInfo)
-{
-	sendto(sock_fd, packet->raw_data, lenght, 0, (struct sockaddr*)&socketInfo->socket_address, sizeof(struct sockaddr_ll));
+void proxy_sendRawPacket(int sock_fd, union eth_buffer *packet, int dataLength, socket_aux *socketInfo)
+{	
+	//IP Header: set packet length and checksum
+	packet->cooked_data.payload.ip.len = htons(sizeof(struct ip_hdr) + sizeof(struct icmp_hdr) + dataLength);
+	packet->cooked_data.payload.ip.sum = 0x0000;
+	packet->cooked_data.payload.ip.sum = htons((~ipchksum((uint8_t *)&packet->cooked_data.payload.ip) & 0xffff));
+
+	//Calculate ICMP header checksum
+	packet->cooked_data.payload.icmp.checksum = 0;
+	packet->cooked_data.payload.icmp.checksum = icmpchecksum((uint16_t *)&packet->cooked_data.payload.icmp, sizeof(struct icmp_hdr) + dataLength);
+
+	//Send data
+	memcpy(socketInfo->socket_address.sll_addr, packet->cooked_data.ethernet.dst_addr, 6);
+	if(sendto(sock_fd, packet->raw_data, FRAME_HEADER_SIZE + dataLength, 0, (struct sockaddr*)&socketInfo->socket_address, sizeof(struct sockaddr_ll)) < 0)
+		printf("ERROR when sending ICMP packet!");
 }
 
 int getDefaultGateway(uint8_t* defaultGatewayMAC, char* destination)
