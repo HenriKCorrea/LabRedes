@@ -23,7 +23,7 @@ uint16_t icmpchecksum(uint16_t *buffer, uint32_t size)
     return (uint16_t)(~cksum);
 }
 
-void initPacket(union eth_buffer* packet, uint8_t* src_mac, uint8_t* dst_mac)
+void initPacket(union eth_buffer* packet, uint8_t* src_mac, uint8_t* dst_mac, int whoAmI)
 {
 	/* Fill the Ethernet frame header */
 	memcpy(packet->cooked_data.ethernet.dst_addr, dst_mac, 6);
@@ -38,6 +38,7 @@ void initPacket(union eth_buffer* packet, uint8_t* src_mac, uint8_t* dst_mac)
 	packet->cooked_data.payload.ip.off = htons(0x00);
 	packet->cooked_data.payload.ip.ttl = 50;
 	packet->cooked_data.payload.ip.proto = 1;			//ICMP (1)
+
 	packet->cooked_data.payload.ip.sum = htons(0x0000);
 	// packet->cooked_data.payload.ip.src[0] = 22;
 	// packet->cooked_data.payload.ip.src[1] = 0;
@@ -50,8 +51,15 @@ void initPacket(union eth_buffer* packet, uint8_t* src_mac, uint8_t* dst_mac)
 	//packet->cooked_data.payload.ip.sum = htons((~ipchksum((uint8_t *)&packet->cooked_data.payload.ip) & 0xffff));     
 
 	//Fill ICMP header data.
-	//packet->cooked_data.payload.icmp.type = 8;	//(8) echo request
-	packet->cooked_data.payload.icmp.code = 0; //(0) echo request / reply
+	if(whoAmI == 1)
+	{
+		packet->cooked_data.payload.icmp.code = ICMP_ECHO_REQUEST_TYPE; // 0x00 ECHO REQUEST
+	}
+	if(whoAmI == 2)
+	{
+		packet->cooked_data.payload.icmp.code = ICMP_ECHO_REPLY_TYPE; // 0x08 ECHO REPLY
+	}	
+
 	packet->cooked_data.payload.icmp.checksum = 0;
 	packet->cooked_data.payload.icmp.identifier = htons(0x17);	//set an random value per transmission (not by packet sent)
 	packet->cooked_data.payload.icmp.sequenceNumber = htons(0x01);	//Increment sequence for each echo request packet sent
@@ -70,9 +78,9 @@ void initPacket(union eth_buffer* packet, uint8_t* src_mac, uint8_t* dst_mac)
 	// return 0;
 }
 
-void proxy_sendRawPacket()
+void proxy_sendRawPacket(int sock_fd, union eth_buffer *packet, int lenght, socket_aux *socketInfo)
 {
-
+	sendto(sock_fd, packet->raw_data, lenght, 0, (struct sockaddr*)&socketInfo->socket_address, sizeof(struct sockaddr_ll));
 }
 
 int getDefaultGateway(uint8_t* defaultGatewayMAC, char* destination)

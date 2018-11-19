@@ -3,6 +3,7 @@
 #define PROXY_HH
 
 #include <stdint.h>
+#include "socketSetup.h"
 #include "raw.h"
 
 #define PROXY_TUNNEL_NAME "tun0"
@@ -26,7 +27,7 @@ void proxy_createICMPSocket(); //OK
 
 retStatus proxy_bindTunnel(); //OK
 
-void initPacket(union eth_buffer* packet, uint8_t* src_mac, uint8_t* dst_mac);
+void initPacket(union eth_buffer* packet, uint8_t* src_mac, uint8_t* dst_mac, int whoAmI);
 
 void proxy_sendRawPacket();
 

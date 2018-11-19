@@ -159,11 +159,12 @@ void run_tunnel(uint8_t *dest, int isServer, int isClient)
 {
   union eth_buffer packet;
   fd_set fs;  
-  int tun_fd = -1;    //Tunnel interface file descriptor
-  int sock_fd = -1;   //Ethernet interface file descriptor
-  //uint8_t dst[4];			/* destination address */
-  uint8_t gateway_mac[6] = {0};  //Default gateway MAC Address
-  socket_aux socketInfo; //Auxiliary struct that holds essential information to send / receive data using raw sockets
+  int tun_fd = -1;                  //Tunnel interface file descriptor
+  int sock_fd = -1;                 //Ethernet interface file descriptor
+  //uint8_t dst[4];			            /* destination address */
+  uint8_t gateway_mac[6] = {0};     //Default gateway MAC Address
+  socket_aux socketInfo;            //Auxiliary struct that holds essential information to send / receive data using raw sockets
+  uint8_t *bufferToRead;
 
   //Open tunnel interface
   tun_fd = tun_alloc("tun0", IFF_TUN | IFF_NO_PI);
@@ -213,7 +214,15 @@ void run_tunnel(uint8_t *dest, int isServer, int isClient)
   }
   
   //mount (init) packet
-  initPacket(&packet, socketInfo.this_mac, gateway_mac);
+  if(isServer == 1)
+  {
+    initPacket(&packet, socketInfo.this_mac, gateway_mac, 1); // (1) == CLIENT
+  }
+
+  if(isClient == 1)
+  {
+    initPacket(&packet, socketInfo.this_mac, gateway_mac, 2); // (2) == SERVER
+  }
   
   // HKC: Não é possível fazer bind quando uma interface é aberta em modo promiscuo.
   // if (server) {
@@ -253,6 +262,7 @@ void run_tunnel(uint8_t *dest, int isServer, int isClient)
       memset(packet.raw_data, 0, ETH_LEN);     //Clean packet buffer
       printf("[DEBUG] Destination address: %s\n", dest);
 
+
       /////////////////////////////////////////////////////////////////////////
       //TODO: Set the packet IP source address the default gateway route IP
       /////////////////////////////////////////////////////////////////////////
@@ -282,18 +292,6 @@ void run_tunnel(uint8_t *dest, int isServer, int isClient)
       packet.cooked_data.payload.ip.dst[2] = dest[2];
       packet.cooked_data.payload.ip.dst[3] = dest[3];
 
-
-      if(isServer) 
-      {
-        //set_reply_type(&packet); /* CHANGE TO MY FUNCTION */
-        packet.cooked_data.payload.icmp.type = 0; //Echo reply (0)
-      }
-      else //isClient
-      {
-        //set_echo_type(&packet); /* CHANGE TO MY FUNCTION */
-        packet.cooked_data.payload.icmp.type = 8; //Echo request (8)
-      }
-
       //HKC: Memory is already allocated in packet variable
       //packet.payload = calloc(MTU, sizeof(uint8_t));
       // if (packet.payload == NULL){
@@ -311,6 +309,7 @@ void run_tunnel(uint8_t *dest, int isServer, int isClient)
       printf("[DEBUG] Sending ICMP packet with payload_size: %d\n", payload_size);
       // Sending ICMP packet
       //send_icmp_packet(sock_fd, &packet); /* CHANGE TO MY FUNCTION */
+      proxy_sendRawPacket(sock_fd, packet, FRAME_HEADER_SIZE + payload_size, &socketInfo);
 
       //HKC: Malloc is not used by raw packets
       //free(packet.payload);
