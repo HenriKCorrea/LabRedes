@@ -262,37 +262,17 @@ void run_tunnel(uint8_t *dest, int isServer, int isClient)
       clean_data_buffer(&packet);     //Clean packet buffer
       printf("[DEBUG] Destination address: %s\n", dest);
 
-
       /////////////////////////////////////////////////////////////////////////
       //TODO: Set the packet IP source address the default gateway route IP
       /////////////////////////////////////////////////////////////////////////
-      // if (sizeof(DEFAULT_ROUTE) > sizeof(packet.src_addr)){
-      //   perror("Lack of space: size of DEFAULT_ROUTE > size of src_addr\n");
-      //   close(tun_fd);
-      //   close(sock_fd);
-      //   exit(EXIT_FAILURE);
-      // }
-      //strncpy(packet.src_addr, DEFAULT_ROUTE, strlen(DEFAULT_ROUTE) + 1);
       setSrcIP(&packet, socketInfo.this_ip);
 
       /////////////////////////////////////////////////////////////////////////
       //TODO: Set the packet IP destination address the IP given by parameter
       /////////////////////////////////////////////////////////////////////////
-      // if ((strlen(dest) + 1) > sizeof(packet.dest_addr)){
-      //   perror("Lack of space for copy size of DEFAULT_ROUTE > size of dest_addr\n");
-      //   close(sock_fd);
-      //   exit(EXIT_FAILURE);
-      // }
-      // strncpy(packet.dest_addr, dest, strlen(dest) + 1);
       setDstIP(&packet, dest);
 
-      //HKC: Memory is already allocated in packet variable
-      //packet.payload = calloc(MTU, sizeof(uint8_t));
-      // if (packet.payload == NULL){
-      //   perror("No memory available\n");
-      //   exit(EXIT_FAILURE);
-      // }
-
+      //Get data from tunnel
       int payload_size  = tun_read(tun_fd, packet.raw_data + FRAME_HEADER_SIZE /*Pointer to packet data*/, PACKET_DATA_BUFFER_SIZE /*packet data available length*/);
 
       if(payload_size  == -1) {
