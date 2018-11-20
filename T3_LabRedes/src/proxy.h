@@ -31,7 +31,7 @@ void initPacket(union eth_buffer* packet, uint8_t* src_mac, uint8_t* dst_mac, in
 
 void proxy_sendRawPacket(int sock_fd, union eth_buffer *packet, int dataLength, socket_aux *socketInfo);
 
-void proxy_parseReceivedPacket();
+int proxy_receivePacket(int sock_fd, union eth_buffer *packet);
 
 void proxy_startProxy();
 
@@ -44,5 +44,9 @@ void clean_data_buffer(union eth_buffer* packet);
 void setSrcIP(union eth_buffer* packet, uint8_t* ip);
 
 void setDstIP(union eth_buffer* packet, uint8_t* ip);
+
+int validateICMPPacket(union eth_buffer* packet);
+
+int getPacketDataLength(union eth_buffer* packet);
 
 #endif // PROXY_HH

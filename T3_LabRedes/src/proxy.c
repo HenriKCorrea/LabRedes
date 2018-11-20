@@ -136,7 +136,8 @@ int getDefaultGateway(uint8_t* defaultGatewayMAC, char* destination)
 	else
 	{
 		//Extract program returned IP address
-		fscanf(fp, "%s", IPAddress);
+		if(fscanf(fp, "%s", IPAddress) != 1)
+			printf("ERROR reading IP Address!\n");
 		pclose(fp);
 
 		//Terminate application if IP is invalid
@@ -171,7 +172,8 @@ int getDefaultGateway(uint8_t* defaultGatewayMAC, char* destination)
         {
             //Extract program output
             char MACAddress[20] = {0};    //program output
-            fscanf(fp, "%s", MACAddress);
+            if(fscanf(fp, "%s", MACAddress) != 1)
+				printf("ERROR reading MAC Address!\n");
             pclose(fp);
             
             //Terminate application if output is invalid
@@ -194,10 +196,7 @@ int getDefaultGateway(uint8_t* defaultGatewayMAC, char* destination)
 
 void clean_data_buffer(union eth_buffer* packet)
 {
-	int frame = FRAME_HEADER_SIZE;
-	int packet_size = PACKET_DATA_BUFFER_SIZE;
-
-	memset(packet->raw_data + FRAME_HEADER_SIZE, 0, PACKET_DATA_BUFFER_SIZE);
+	memset(packet->raw_data, 0, ETH_LEN);
 }
 
 void setSrcIP(union eth_buffer* packet, uint8_t* ip)
@@ -214,4 +213,43 @@ void setDstIP(union eth_buffer* packet, uint8_t* ip)
 	packet->cooked_data.payload.ip.dst[1] = ip[1];
 	packet->cooked_data.payload.ip.dst[2] = ip[2];
 	packet->cooked_data.payload.ip.dst[3] = ip[3];	
+}
+
+int proxy_receivePacket(int sock_fd, union eth_buffer* packet)
+{
+	return recvfrom(sock_fd, packet->raw_data, ETH_LEN, 0, NULL, NULL);
+}
+
+int validateICMPPacket(union eth_buffer* packet)
+{
+	int result = 1;	//Validation final result
+
+	//Link layer frame validation
+	if (ntohs(packet->cooked_data.ethernet.eth_type) != ETH_P_IP) 
+	{
+		result = 0;
+	}
+	
+	//IP layer frame validation
+	if ((result != 1) || 
+		(packet->cooked_data.payload.ip.ver != 0x45) || 
+		(packet->cooked_data.payload.ip.tos != 0x00) ||
+		(packet->cooked_data.payload.ip.proto != 1)) 
+	{
+		result = 0;
+	}
+
+	//ICMP layer validation
+	if ((packet->cooked_data.payload.icmp.type != ICMP_ECHO_REQUEST_TYPE) &&
+		(packet->cooked_data.payload.icmp.type != ICMP_ECHO_REPLY_TYPE)) 
+	{
+		result = 0;
+	}
+
+	return result;
+}
+
+int getPacketDataLength(union eth_buffer* packet)
+{
+	return (ntohs(packet->cooked_data.payload.ip.len) - (sizeof(struct ip_hdr) + sizeof(struct icmp_hdr)));
 }

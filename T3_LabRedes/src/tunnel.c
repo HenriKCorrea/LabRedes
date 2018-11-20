@@ -103,56 +103,6 @@ int tun_write(int tun_fd, char *buffer, int length)
 }
 
 /**
- * Function to configure the network
- */
-// void configure_network(int server)
-// {
-//   int pid, status;
-//   char path[100];
-//   char *const args[] = {path, NULL};
-
-//   if (server) {
-//     if (sizeof(SERVER_SCRIPT) > sizeof(path)){
-//       perror("Server script path is too long\n");
-//       exit(EXIT_FAILURE);
-//     }
-//     strncpy(path, SERVER_SCRIPT, strlen(SERVER_SCRIPT) + 1);
-//   }
-//   else {
-//     if (sizeof(CLIENT_SCRIPT) > sizeof(path)){
-//       perror("Client script path is too long\n");
-//       exit(EXIT_FAILURE);
-//     }
-//     strncpy(path, CLIENT_SCRIPT, strlen(CLIENT_SCRIPT) + 1);
-//   }
-
-//   pid = fork();
-
-//   if (pid == -1) {
-//     perror("Unable to fork\n");
-//     exit(EXIT_FAILURE);
-//   }
-  
-//   if (pid==0) {
-//     // Child process, run the script
-//     exit(execv(path, args));
-//   }
-//   else {
-//     // Parent process
-//     waitpid(pid, &status, 0);
-//     if (WEXITSTATUS(status) == 0) {
-//       // Script executed correctly
-//       printf("[DEBUG] Script ran successfully\n");
-//     }
-//     else {
-//       // Some error
-//       printf("[DEBUG] Error in running script\n");
-//     }
-//   }
-// }
-
-
-/**
  * Function to run the tunnel
  */
 void run_tunnel(uint8_t *dest, int isServer, int isClient)
@@ -212,18 +162,6 @@ void run_tunnel(uint8_t *dest, int isServer, int isClient)
     gateway_mac[5] = 0x05;
     //sprintf(gatewayDestination, "default");
   }
-  
-  //mount (init) packet
-  initPacket(&packet, socketInfo.this_mac, gateway_mac, isClient, isServer);
-  
-  // HKC: Não é possível fazer bind quando uma interface é aberta em modo promiscuo.
-  // if (server) {
-  //   printf("[DEBUG] Binding ICMP socket\n");
-  //   bind_icmp_socket(sock_fd); /* CHANGE TO MY FUNCTION */
-  // }
-
-  //HKC: Os scripts já devem ser executados automaticamente pelo CORE emulator quando a simulação é inicializada
-  //configure_network(server);
 
   int fdRange = 0;  //Holds the highest File Descriptor value (to be used by the select() function)
   if (tun_fd > sock_fd) 
@@ -250,8 +188,13 @@ void run_tunnel(uint8_t *dest, int isServer, int isClient)
       // Reading data from tun device and sending ICMP packet
 
       printf("[DEBUG] Preparing ICMP packet to be sent\n");
+
       // Preparing ICMP packet to be sent
       clean_data_buffer(&packet);     //Clean packet buffer
+
+      //mount (init) packet
+      initPacket(&packet, socketInfo.this_mac, gateway_mac, isClient, isServer);      
+
       printf("[DEBUG] Destination address: %s\n", dest);
 
       /////////////////////////////////////////////////////////////////////////
@@ -265,7 +208,7 @@ void run_tunnel(uint8_t *dest, int isServer, int isClient)
       setDstIP(&packet, dest);
 
       //Get data from tunnel
-      int payload_size  = tun_read(tun_fd, packet.raw_data + FRAME_HEADER_SIZE /*Pointer to packet data*/, PACKET_DATA_BUFFER_SIZE /*packet data available length*/);
+      int payload_size = tun_read(tun_fd, packet.raw_data + FRAME_HEADER_SIZE /*Pointer to packet data*/, PACKET_DATA_BUFFER_SIZE /*packet data available length*/);
 
       if(payload_size  == -1) {
         perror("Error while reading from tun device\n");
@@ -273,35 +216,28 @@ void run_tunnel(uint8_t *dest, int isServer, int isClient)
       }
 
       printf("[DEBUG] Sending ICMP packet with payload_size: %d\n", payload_size);
-      // Sending ICMP packet
-      //send_icmp_packet(sock_fd, &packet); /* CHANGE TO MY FUNCTION */
-      proxy_sendRawPacket(sock_fd, &packet, FRAME_HEADER_SIZE + payload_size, &socketInfo);
 
-      //HKC: Malloc is not used by raw packets
-      //free(packet.payload);
+      // Sending ICMP packet
+      proxy_sendRawPacket(sock_fd, &packet, FRAME_HEADER_SIZE + payload_size, &socketInfo);
     }
 
     //If 'fs' flag is set with the ethernet file descriptor value, there's new data available to be read.
     if (FD_ISSET(sock_fd, &fs)) {
-      printf("[DEBUG] Received ICMP packet\n");
-      // Reading data from remote socket and sending to tun device
 
       // Getting ICMP packet
       clean_data_buffer(&packet);     //Clean packet buffer
-      int payload_size = 0;
-      //payload_size = receive_icmp_packet(sock_fd, &packet); /* CHANGE TO MY FUNCTION */
+      int payload_size = proxy_receivePacket(sock_fd, &packet); /* CHANGE TO MY FUNCTION */
 
-      printf("[DEBUG] Read ICMP packet with payload_size: %d\n", payload_size);
-      // Writing out to tun device
-      //tun_write(tun_fd, packet.raw_data + FRAME_HEADER_SIZE, payload_size);
+      //Check if package headers are valid
+      if (validateICMPPacket(&packet)) 
+      {
+        printf("[DEBUG] Read ICMP packet with payload_size: %d\n", payload_size);
+        // Writing out to tun device
+        tun_write(tun_fd, packet.raw_data + FRAME_HEADER_SIZE, getPacketDataLength(&packet));
 
-      //Overwrite destination address (server) 
-      //printf("[DEBUG] Src address being copied: %s\n", packet.src_addr);
-      //strncpy(dest, packet.src_addr, strlen(packet.src_addr) + 1);
-
-
-      //HKC: Malloc is not used by raw packets
-      //free(packet.payload);
+        //Overwrite destination address (server) 
+        memcpy(dest, packet.cooked_data.payload.ip.src, 4);
+      }
     }
   }
 
