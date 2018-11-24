@@ -41,27 +41,17 @@ void initPacket(union eth_buffer* packet, uint8_t* src_mac, uint8_t* dst_mac, in
 	memcpy(packet->cooked_data.ethernet.src_addr, src_mac, 6);
 	packet->cooked_data.ethernet.eth_type = htons(ETH_P_IP);	//IPV4 packet
 
-	/* Fill IP header data. Fill all fields and a zeroed CRC field, then update the CRC! */
+	/* Fill IP header data  */
 	packet->cooked_data.payload.ip.ver = 0x45;
 	packet->cooked_data.payload.ip.tos = 0x00;
-	//packet->cooked_data.payload.ip.len = htons(sizeof(struct ip_hdr) + sizeof(struct icmp_hdr) + sizeof(packet_bytes));
 	packet->cooked_data.payload.ip.id = htons(0x00);
 	packet->cooked_data.payload.ip.off = htons(0x00);
 	packet->cooked_data.payload.ip.ttl = 50;
 	packet->cooked_data.payload.ip.proto = 1;			//ICMP (1)
 
 	packet->cooked_data.payload.ip.sum = htons(0x0000);
-	// packet->cooked_data.payload.ip.src[0] = 22;
-	// packet->cooked_data.payload.ip.src[1] = 0;
-	// packet->cooked_data.payload.ip.src[2] = 0;
-	// packet->cooked_data.payload.ip.src[3] = 22;
-	// packet->cooked_data.payload.ip.dst[0] = 33;
-	// packet->cooked_data.payload.ip.dst[1] = 0;
-	// packet->cooked_data.payload.ip.dst[2] = 0;
-	// packet->cooked_data.payload.ip.dst[3] = 33;
-	//packet->cooked_data.payload.ip.sum = htons((~ipchksum((uint8_t *)&packet->cooked_data.payload.ip) & 0xffff));     
 
-	//Fill ICMP header data.
+	/* Fill ICMP header data. */
 
 	//Set type according to host
 	if(isClient == 1)
@@ -82,19 +72,6 @@ void initPacket(union eth_buffer* packet, uint8_t* src_mac, uint8_t* dst_mac, in
 	packet->cooked_data.payload.icmp.checksum = 0;
 	packet->cooked_data.payload.icmp.identifier = htons(0x17);	//set an random value per transmission (not by packet sent)
 	packet->cooked_data.payload.icmp.sequenceNumber = htons(0x01);	//Increment sequence for each echo request packet sent
-
-	/* Fill ICMP payload */
-	//memcpy(packet->raw_data + sizeof(struct eth_hdr) + sizeof(struct ip_hdr) + sizeof(struct icmp_hdr), packet_bytes, sizeof(packet_bytes));
-
-	//Calculate ICMP checksum
-	//packet->cooked_data.payload.icmp.checksum = icmpchecksum((uint16_t *)&packet->cooked_data.payload.icmp, sizeof(struct icmp_hdr) + sizeof(packet_bytes));	    
-
-	/* Send it.. */
-	// memcpy(socket_address.sll_addr, dst_mac, 6);
-	// if (sendto(sockfd, packet->raw_data, sizeof(struct eth_hdr) + sizeof(struct ip_hdr) + sizeof(struct icmp_hdr) + sizeof(packet_bytes), 0, (struct sockaddr*)&socket_address, sizeof(struct sockaddr_ll)) < 0)
-	// 	printf("Send failed\n");
-
-	// return 0;
 }
 
 void proxy_sendRawPacket(int sock_fd, union eth_buffer *packet, int dataLength, socket_aux *socketInfo)

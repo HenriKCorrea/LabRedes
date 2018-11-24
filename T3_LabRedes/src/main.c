@@ -12,11 +12,6 @@ void usage(char* programName)
 
 int main(int argc, char *argv[])
 {
-
-    printf("Press ENTER to continue...\n");
-    getc(stdin);
-    printf("Starting application!\n");
-
     int isClient = 0;
     int isServer = 0;
     int result = 1;

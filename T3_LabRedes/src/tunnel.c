@@ -59,8 +59,6 @@ int tun_alloc(char *dev, int flags)
     exit(EXIT_FAILURE);
   }
 
-  printf("[DEBUG] Allocatating tunnel2");
-
   printf("[DEBUG] Created tunnel %s\n", dev);
 
   return tun_fd;
@@ -124,8 +122,6 @@ void run_tunnel(uint8_t *dest, int isServer, int isClient)
     exit(EXIT_FAILURE);
   }
   
-
-  printf("[DEBUG] Starting tunnel - Dest: %s, Server: %d\n", dest, isServer);
   printf("[DEBUG] Opening ICMP socket\n");
   
   //Open ethernet interface
@@ -170,6 +166,7 @@ void run_tunnel(uint8_t *dest, int isServer, int isClient)
     fdRange = sock_fd + 1;
   }
 
+  printf("[DEBUG] Setup completed. Program starting...\n");
 
   while (1) {
     FD_ZERO(&fs);           //Clean File Descriptor variable 
@@ -181,18 +178,13 @@ void run_tunnel(uint8_t *dest, int isServer, int isClient)
 
     //If 'fs' flag is set with the tunnel file descriptor value, there's new data available to be read.
     if (FD_ISSET(tun_fd, &fs)) {
-      printf("[DEBUG] Data needs to be readed from tun device\n");
       // Reading data from tun device and sending ICMP packet
-
-      printf("[DEBUG] Preparing ICMP packet to be sent\n");
 
       // Preparing ICMP packet to be sent
       clean_data_buffer(&packet);     //Clean packet buffer
 
       //mount (init) packet
       initPacket(&packet, socketInfo.this_mac, gateway_mac, isClient, isServer);      
-
-      printf("[DEBUG] Destination address: %s\n", dest);
 
       /////////////////////////////////////////////////////////////////////////
       //TODO: Set the packet IP source address the default gateway route IP
