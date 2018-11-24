@@ -159,7 +159,7 @@ void run_tunnel(uint8_t *dest, int isServer, int isClient)
     gateway_mac[2] = 0x00;
     gateway_mac[3] = 0xaa;
     gateway_mac[4] = 0x00;
-    gateway_mac[5] = 0x05;
+    gateway_mac[5] = 0x06;
     //sprintf(gatewayDestination, "default");
   }
 
