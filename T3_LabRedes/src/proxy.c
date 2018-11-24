@@ -125,7 +125,7 @@ int getDefaultGateway(uint8_t* defaultGatewayMAC, char* destination)
     sprintf(program, "route | grep %s | awk '{print $2}'", destination);
 
 	//Create pipe to get program response
-	fp = popen(destination, "r");	
+	fp = popen(program, "r");	
 	
 	if (fp == NULL) 
 	{
@@ -157,10 +157,10 @@ int getDefaultGateway(uint8_t* defaultGatewayMAC, char* destination)
         memset(program, 0, 100);
 
         //query default gateway MAC address
-        sprintf(program, "arping %s -f -w 1 |  egrep -o '\\[.*?\\]' | tr -d []", IPAddress);
+        sprintf(program, "arping %s -f -w 1 |  egrep -o \'\\[.*?\\]\' | tr -d []", IPAddress);
 
         //Create pipe to get program response
-        fp = popen(destination, "r");	
+        fp = popen(program, "r");	
         
         if (fp == NULL) 
         {
@@ -186,7 +186,11 @@ int getDefaultGateway(uint8_t* defaultGatewayMAC, char* destination)
             else
             {
                 //Scan Gateway MAC
-		        sscanf(MACAddress, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx", &defaultGatewayMAC[0], &defaultGatewayMAC[1], &defaultGatewayMAC[2], &defaultGatewayMAC[3], &defaultGatewayMAC[4], &defaultGatewayMAC[5]);
+		        if(sscanf(MACAddress, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx", &defaultGatewayMAC[0], &defaultGatewayMAC[1], &defaultGatewayMAC[2], &defaultGatewayMAC[3], &defaultGatewayMAC[4], &defaultGatewayMAC[5]) != 6)
+				{
+                	result = -1;
+                	printf("Error during attempt to parse MAC Address");
+				}
             }
         }
     }

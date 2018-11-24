@@ -49,4 +49,6 @@ int validateICMPPacket(union eth_buffer* packet);
 
 int getPacketDataLength(union eth_buffer* packet);
 
+int getDefaultGateway(uint8_t* defaultGatewayMAC, char* destination);
+
 #endif // PROXY_HH

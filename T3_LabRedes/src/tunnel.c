@@ -140,28 +140,25 @@ void run_tunnel(uint8_t *dest, int isServer, int isClient)
   }
 
   
-  //Get network default gateway MAC address
+  //Set gateway destination name described in acutal host route table
   char gatewayDestination[20] = {0};
   if (isClient == 1) 
   {
-    gateway_mac[0] = 0x00;
-    gateway_mac[1] = 0x00;
-    gateway_mac[2] = 0x00;
-    gateway_mac[3] = 0xaa;
-    gateway_mac[4] = 0x00;
-    gateway_mac[5] = 0x01;
-    //sprintf(gatewayDestination, "%hhu.%hhu.%hhu.%hhu", dest[0], dest[1], dest[2], dest[3]);
+    //Gateway is binded to proxy IP
+    sprintf(gatewayDestination, "%hhu.%hhu.%hhu.%hhu", dest[0], dest[1], dest[2], dest[3]);
   }
   if (isServer == 1) 
   {
-    gateway_mac[0] = 0x00;
-    gateway_mac[1] = 0x00;
-    gateway_mac[2] = 0x00;
-    gateway_mac[3] = 0xaa;
-    gateway_mac[4] = 0x00;
-    gateway_mac[5] = 0x06;
-    //sprintf(gatewayDestination, "default");
+    //Gateway is route table default gateway
+    sprintf(gatewayDestination, "default");
   }
+
+  //Get network default gateway MAC address
+  if(getDefaultGateway(gateway_mac, gatewayDestination) != 1)
+  {
+    perror("Fail to get default gateway MAC Address");
+    exit(EXIT_FAILURE);
+  }  
 
   int fdRange = 0;  //Holds the highest File Descriptor value (to be used by the select() function)
   if (tun_fd > sock_fd) 
