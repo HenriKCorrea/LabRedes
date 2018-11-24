@@ -69,25 +69,7 @@ node n2 {
 	custom-config-id service:UserDefined
 	custom-command UserDefined
 	config {
-	files=('iptables.sh', )
-	cmdup=('route add default gw 10.0.2.1', 'sh iptables.sh', )
-	}
-    }
-    custom-config {
-	custom-config-id service:UserDefined:iptables.sh
-	custom-command iptables.sh
-	config {
-	#!/bin/sh
-	#Iptables configuração.
-	
-	iptables -A INPUT -p icmp --icmp-type echo-request -j DROP
-	iptables -A INPUT -p tcp --destination-port 80 -j DROP
-	iptables -A INPUT -p tcp --destination-port 443 -j DROP
-	iptables -A INPUT -p tcp --destination-port 22 -j DROP
-	iptables -A INPUT -p tcp --destination-port 1234 -j DROP
-	iptables -A INPUT -p tcp --destination-port 21 -j DROP
-	iptables -A INPUT -p tcp --destination-port 12345 -j DROP
-	iptables -A INPUT -p tcp --destination-port 20 -j DROP
+	cmdup=('route add default gw 10.0.2.1', 'iptables -A FORWARD -p tcp --destination-port 80:65535 -j DROP  ', 'iptables -A FORWARD -p udp --destination-port 80:65535 -j DROP  ', )
 	}
     }
 }
