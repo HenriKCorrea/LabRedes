@@ -69,7 +69,7 @@ node n2 {
 	custom-config-id service:UserDefined
 	custom-command UserDefined
 	config {
-	cmdup=('route add default gw 10.0.2.1', 'iptables -A FORWARD -p tcp --destination-port 80:65535 -j DROP  ', 'iptables -A FORWARD -p udp --destination-port 80:65535 -j DROP  ', )
+	cmdup=('route add default gw 10.0.2.1', 'iptables -A FORWARD -p tcp --destination-port 0:65535 -j DROP', 'iptables -A FORWARD -p udp --destination-port 0:65535 -j DROP', )
 	}
     }
 }
